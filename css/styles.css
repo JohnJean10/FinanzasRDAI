@@ -83,6 +83,8 @@ img {
     height: 100vh;
     z-index: 100;
     transition: transform var(--transition-medium);
+    overflow: hidden;
+    /* Corrección solicitada */
 }
 
 .logo {
