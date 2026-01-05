@@ -1,0 +1,569 @@
+﻿<!DOCTYPE html>
+<html lang="es-DO">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#003366">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>FinanzasRD AI - Tu Asistente Financiero</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Librerías para exportación PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Librería para exportación Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="logo-text">Finanzas<span>RD</span> AI</div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-page="transactions">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transacciones</span>
+                </div>
+                <div class="nav-item" data-page="budgets">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Presupuestos</span>
+                </div>
+                <div class="nav-item" data-page="goals">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Metas de Ahorro</span>
+                </div>
+                <div class="nav-item" data-page="insights">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Insights IA</span>
+                </div>
+                <div class="nav-item" data-page="accounts">
+                    <i class="fas fa-university"></i>
+                    <span>Cuentas</span>
+                </div>
+            </nav>
+
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-avatar">JD</div>
+                    <div class="user-details">
+                        <h4>Juan Diaz</h4>
+                        <p>Usuario Premium</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-title">
+                    <h1>Hola, Juan</h1>
+                    <p>Aqui esta tu resumen financiero de hoy</p>
+                </div>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Buscar transacciones...">
+                    </div>
+                    <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge"></span>
+                    </button>
+                </div>
+            </header>
+
+            <div id="view-dashboard" class="view-section active">
+                <!-- Dashboard Grid -->
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>5.2%</span>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-balance">RD$ 0</div>
+                        <div class="stat-label">Balance Total</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon green">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>12%</span>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-income">RD$ 0</div>
+                        <div class="stat-label">Ingresos del Mes</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon red">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-trend down">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>8%</span>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="total-expenses">RD$ 0</div>
+                        <div class="stat-label">Gastos del Mes</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon gold">
+                                <i class="fas fa-piggy-bank"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="savings-rate">0%</div>
+                        <div class="stat-label">Tasa de Ahorro</div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Gastos por Categoria</h3>
+                            <span class="card-action">
+                                <i class="fas fa-download"></i>
+                                Exportar
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="expensesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recomendaciones IA</h3>
+                        </div>
+                        <div class="card-body" id="ai-recommendations">
+                            <!-- Dynamic recommendations will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Transacciones Recientes</h3>
+                        <span class="card-action" onclick="openTransactionModal()">
+                            <i class="fas fa-plus"></i>
+                            Ver Todas
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="transaction-list" id="transaction-list">
+                            <!-- Dynamic transactions will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Overview -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Estado de Presupuestos</h3>
+                        <span class="card-action">
+                            <i class="fas fa-cog"></i>
+                            Gestionar
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="budget-list">
+                            <!-- Dynamic budget items will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings Goals -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Metas de Ahorro</h3>
+                        <span class="card-action" onclick="openGoalModal()">
+                            <i class="fas fa-plus"></i>
+                            Nueva Meta
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="goals-list">
+                            <!-- Dynamic goals will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="export-buttons"
+                    style="position: fixed; bottom: 100px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 999;">
+                    <button class="export-btn pdf" onclick="exportToPDFInfographic()" title="Exportar infografía PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>
+                    <button class="export-btn excel" onclick="exportToExcel()" title="Exportar a Excel">
+                        <i class="fas fa-file-excel"></i>
+                    </button>
+                </div>
+            </div> <!-- End view-dashboard -->
+
+            <!-- Transactions View -->
+            <div id="view-transactions" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Historial de Transacciones</h3>
+                        <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="full-search-transactions" placeholder="Buscar...">
+                            </div>
+                            <span class="card-action" onclick="exportToPDFInfographic()"
+                                style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: var(--primary); font-weight: 500;">
+                                <i class="fas fa-file-pdf"></i>
+                                PDF
+                            </span>
+                            <span class="card-action" onclick="exportToExcel()"
+                                style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: var(--secondary); font-weight: 500;">
+                                <i class="fas fa-file-excel"></i>
+                                Excel
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="transaction-list" id="full-transaction-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budgets View -->
+            <div id="view-budgets" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Presupuestos Detallados</h3>
+                        <span class="card-action" onclick="openBudgetModal()">
+                            <i class="fas fa-plus"></i>
+                            Nuevo Presupuesto
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="full-budget-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals View -->
+            <div id="view-goals" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Mis Metas de Ahorro</h3>
+                        <span class="card-action" onclick="openGoalModal()">
+                            <i class="fas fa-plus"></i>
+                            Nueva Meta
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="full-goals-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Component -->
+            <div id="view-insights" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Analisis y Recomendaciones</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="full-recommendations-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accounts Component -->
+            <div id="view-accounts" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Cuentas Bancarias</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Gestion de cuentas vinculadas.</p>
+                        <div class="stat-card" style="margin-top: 16px;">
+                            <div class="stat-header">
+                                <div class="stat-icon blue"><i class="fas fa-university"></i></div>
+                            </div>
+                            <div class="stat-value">Banreservas</div>
+                            <div class="stat-label">Debito **** 1234</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openTransactionModal()">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Transaction Modal -->
+    <div class="modal-overlay" id="transaction-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Nueva Transaccion</h3>
+                <button class="modal-close" onclick="closeModal('transaction-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="transaction-form">
+                    <div class="form-group">
+                        <label class="form-label">Tipo de Transaccion</label>
+                        <select class="form-select" id="transaction-type" onchange="toggleTransactionFields()">
+                            <option value="expense">Gasto</option>
+                            <option value="income">Ingreso</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripcion</label>
+                        <input type="text" class="form-input" id="transaction-description"
+                            placeholder="Ej: Supermercado Bravo, Uber, etc." oninput="predictCategory()">
+                        <div class="ai-tag" id="category-prediction" style="display: none;">
+                            <i class="fas fa-robot"></i>
+                            <span>IA sugiere: <strong id="suggested-category">Alimentacion</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Monto (RD$)</label>
+                            <input type="number" class="form-input" id="transaction-amount" placeholder="0.00"
+                                step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" class="form-input" id="transaction-date">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Cuenta</label>
+                        <select class="form-select" id="transaction-account">
+                            <option value="banreservas">Banreservas - Debito</option>
+                            <option value="popular">Popular - Debito</option>
+                            <option value="bhd">BHD Leon</option>
+                            <option value="cash">Efectivo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="is-recurring" onchange="toggleRecurrenceOptions()">
+                            Transacción recurrente
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="recurrence-group" style="display: none;">
+                        <label class="form-label">Frecuencia</label>
+                        <select class="form-select" id="recurrence-pattern">
+                            <option value="daily">Diaria</option>
+                            <option value="weekly">Semanal</option>
+                            <option value="biweekly">Quincenal</option>
+                            <option value="monthly">Mensual</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="category-group">
+                        <label class="form-label">Categoria</label>
+                        <select class="form-select" id="transaction-category">
+                            <option value="alimentacion_supermercado">Alimentacion - Supermercado</option>
+                            <option value="alimentacion_restaurantes">Alimentacion - Restaurantes</option>
+                            <option value="alimentacion_comida_rapida">Alimentacion - Comida Rapida</option>
+                            <option value="transporte_gasolina">Transporte - Gasolina</option>
+                            <option value="transporte_publico">Transporte - Publico</option>
+                            <option value="transporte_uber">Transporte - Uber/Metro</option>
+                            <option value="vivienda_alquiler">Vivienda - Alquiler</option>
+                            <option value="vivienda_servicios">Vivienda - Servicios</option>
+                            <option value="servicios_telefono">Servicios - Telefono/Internet</option>
+                            <option value="servicios_suscripciones">Servicios - Suscripciones</option>
+                            <option value="salud_farmacia">Salud - Farmacia</option>
+                            <option value="salud_medico">Salud - Medico</option>
+                            <option value="entretenimiento_cine">Entretenimiento - Cine</option>
+                            <option value="entretenimiento_streaming">Entretenimiento - Streaming</option>
+                            <option value="shopping_ropa">Shopping - Ropa</option>
+                            <option value="shopping_electronica">Shopping - Electronica</option>
+                            <option value="educacion_cursos">Educacion - Cursos</option>
+                            <option value="familia_remesas">Familia - Remesas</option>
+                            <option value="otros_impuestos">Otros - Impuestos</option>
+                            <option value="otros_otros">Otros - Varios</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        Guardar Transaccion
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Nueva Meta de Ahorro</h3>
+                <button class="modal-close" onclick="closeModal('goal-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="goal-form">
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la Meta</label>
+                        <input type="text" class="form-input" id="goal-name"
+                            placeholder="Ej: Vacaciones, Auto nuevo, etc.">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Monto Objetivo (RD$)</label>
+                            <input type="number" class="form-input" id="goal-target" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ahorrado (RD$)</label>
+                            <input type="number" class="form-input" id="goal-current" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha Objetivo</label>
+                        <input type="date" class="form-input" id="goal-deadline">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Icono</label>
+                        <select class="form-select" id="goal-icon">
+                            <option value="plane">Viajes</option>
+                            <option value="car">Auto</option>
+                            <option value="home">Casa</option>
+                            <option value="education">Educacion</option>
+                            <option value="health">Salud</option>
+                            <option value="gift">Regalos</option>
+                            <option value="electronics">Electronica</option>
+                            <option value="savings">Ahorro General</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-bullseye"></i>
+                        Crear Meta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div class="modal-overlay" id="budget-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">GestiÃ³n de Presupuesto</h3>
+                <button class="modal-close" onclick="closeModal('budget-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="budget-form">
+                    <input type="hidden" id="budget-id">
+                    <div class="form-group">
+                        <label class="form-label">CategorÃ­a</label>
+                        <select class="form-select" id="budget-category">
+                            <option value="alimentacion">AlimentaciÃ³n</option>
+                            <option value="transporte">Transporte</option>
+                            <option value="vivienda">Vivienda</option>
+                            <option value="servicios">Servicios</option>
+                            <option value="entretenimiento">Entretenimiento</option>
+                            <option value="salud">Salud</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="familia">Familia</option>
+                            <option value="educacion">EducaciÃ³n</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">LÃ­mite Mensual (RD$)</label>
+                        <input type="number" class="form-input" id="budget-limit" placeholder="0.00" step="0.01"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Color Identificativo</label>
+                        <div class="color-picker-container" style="display: flex; gap: 10px; margin-top: 5px;">
+                            <input type="color" id="budget-color" value="#003366"
+                                style="width: 50px; height: 40px; border: none; padding: 0; background: none;">
+                            <span style="font-size: 12px; color: #666; align-self: center;">Selecciona un color</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Guardar Presupuesto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+
+</html>
