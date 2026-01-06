@@ -1,176 +1,36 @@
-# FinanzasRD AI
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-**Asistente Financiero con IA para República Dominicana**
+## Getting Started
 
-Una aplicación web completa para gestionar finanzas personales, con características de inteligencia artificial para categorización automática de transacciones y recomendaciones personalizadas.
+First, run the development server:
 
-## Características
-
-- **Dashboard Financiero**: Visualiza tu balance, ingresos, gastos y tasa de ahorro en tiempo real
-- **Categorización Automática IA**: Predice la categoría de transacciones basándose en la descripción
-- **Gestión de Transacciones**: Registro de ingresos y gastos con categorías específicas para RD
-- **Presupuestos por Categoría**: Controla tus gastos con límites y alertas visuales
-- **Metas de Ahorro**: Define y seguimiento de objetivos financieros
-- **Recomendaciones Personalizadas**: Consejos inteligentes basados en tu comportamiento financiero
-- **Gráficos Interactivos**: Visualización de gastos por categoría usando Chart.js
-- **Diseño Responsivo**: Funciona en desktop y dispositivos móviles
-
-## Estructura del Proyecto
-
-```
-finanzasrd-ai/
-├── index.html          # Archivo principal HTML
-├── css/
-│   └── styles.css      # Estilos de la aplicación
-├── js/
-│   └── app.js          # Lógica de la aplicación
-├── assets/             # Recursos estáticos (imágenes, etc.)
-├── docs/               # Documentación
-└── package.json        # Configuración del proyecto
-```
-
-## Instalación y Desarrollo
-
-### Requisitos Previos
-- Node.js 16+ 
-- npm o yarn
-- Un editor de código (VS Code recomendado)
-
-### Iniciar Desarrollo
-
-1. **Clonar o descargar el proyecto**
-
-2. **Instalar dependencias** (para desarrollo local):
 ```bash
-npm install
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-3. **Iniciar servidor de desarrollo**:
-```bash
-npm start
-```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-4. **Abrir en navegador**:
-```
-http://localhost:3000
-```
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## Tecnologías Utilizadas
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- **HTML5** - Estructura semántica
-- **CSS3** - Estilos con variables CSS y diseño responsivo
-- **JavaScript (ES6+)** - Lógica de la aplicación
-- **Chart.js** - Gráficos interactivos
-- **FontAwesome** - Iconos
-- **Google Fonts** - Tipografía (Inter)
+## Learn More
 
-## Categorías Soportadas
+To learn more about Next.js, take a look at the following resources:
 
-### Alimentación
-- Supermercado (Jumbo, Bravo, Sirena, etc.)
-- Restaurantes
-- Comida Rápida
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### Transporte
-- Gasolina
-- Transporte Público (Metro, OMSA)
-- Uber/Metro
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-### Vivienda
-- Alquiler
-- Servicios del Hogar (Edesur, etc.)
+## Deploy on Vercel
 
-### Servicios
-- Teléfono/Internet (Claro, Orange, Altice)
-- Suscripciones (Netflix, Spotify, etc.)
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-### Salud
-- Farmacia
-- Médico
-
-### Entretenimiento
-- Cine/Eventos
-- Streaming
-
-### Shopping
-- Ropa
-- Electrónica
-
-### Familia
-- Remesas
-
-## Integración con Backend
-
-El archivo `js/app.js` incluye un objeto `API` preparado para conectar con un backend:
-
-```javascript
-// Predicción de categoría usando servidor ML
-await FinanzasRD.API.predictCategory(description);
-
-// Obtener recomendaciones del motor IA
-await FinanzasRD.API.getRecommendations();
-
-// Sincronizar con banco
-await FinanzasRD.API.syncBank(accountId);
-```
-
-## Personalización
-
-### Colores del Tema
-Edita las variables CSS en `css/styles.css`:
-
-```css
-:root {
-    --primary: #003366;      // Color principal
-    --secondary: #00A86B;    // Color de éxito/ahorro
-    --accent: #FFD700;       // Color de acento
-    --danger: #FF4444;       // Color de alerta
-    --background: #F4F7FA;   // Color de fondo
-}
-```
-
-### Categorías
-Agrega o modifica categorías en `js/app.js`:
-
-```javascript
-const CATEGORIES = {
-    'nueva_categoria': { 
-        name: 'Nueva Categoria', 
-        icon: 'fa-icono', 
-        color: '#HEXCOLOR' 
-    }
-};
-
-const CATEGORY_PATTERNS = {
-    'nueva_categoria': ['palabra1', 'palabra2', 'palabra3']
-};
-```
-
-## Datos y Persistencia
-
-Los datos se guardan automáticamente en `localStorage` del navegador:
-- Transacciones
-- Metas de ahorro
-- Preferencias del usuario
-
-Para borrar todos los datos:
-```javascript
-localStorage.removeItem('finanzasrd_data');
-```
-
-## Próximos Pasos (para continuar desarrollo)
-
-1. **Backend con NestJS**: Implementar API REST completa
-2. **Machine Learning**: Conectar con modelos Python para predicción de categorías
-3. **Autenticación**: Sistema de usuarios con JWT
-4. **Integración Bancaria**: Conectar con APIs de bancos dominicanos
-5. **Notificaciones Push**: Alertas en tiempo real
-6. **App Móvil**: Versión con Flutter
-
-## Licencia
-
-MIT License - feel free to use and modify for your projects.
-
----
-
-Desarrollado con ❤️ para República Dominicana
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

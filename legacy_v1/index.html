@@ -52,25 +52,25 @@
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </div>
+                <div class="nav-item" data-page="coach">
+                    <i class="fas fa-robot"></i>
+                    <span>Coach IA</span>
+                </div>
                 <div class="nav-item" data-page="transactions">
                     <i class="fas fa-exchange-alt"></i>
                     <span>Transacciones</span>
                 </div>
-                <div class="nav-item" data-page="budgets">
-                    <i class="fas fa-chart-pie"></i>
-                    <span>Presupuestos</span>
+                <div class="nav-item" data-page="planning">
+                    <i class="fas fa-compass"></i>
+                    <span>Planificación</span>
                 </div>
-                <div class="nav-item" data-page="goals">
-                    <i class="fas fa-bullseye"></i>
-                    <span>Metas de Ahorro</span>
+                <div class="nav-item" data-page="debts">
+                    <i class="fas fa-link"></i>
+                    <span>Deudas</span>
                 </div>
-                <div class="nav-item" data-page="insights">
-                    <i class="fas fa-lightbulb"></i>
-                    <span>Insights IA</span>
-                </div>
-                <div class="nav-item" data-page="accounts">
-                    <i class="fas fa-university"></i>
-                    <span>Cuentas</span>
+                <div class="nav-item" data-page="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reportes</span>
                 </div>
             </nav>
 
@@ -108,167 +108,189 @@
                 </div>
             </header>
 
+            <!-- 1. DASHBOARD VIEW (Vista Principal) -->
             <div id="view-dashboard" class="view-section active">
-                <!-- Dashboard Grid -->
                 <div class="dashboard-grid">
+                    <!-- KPI Cards (Automated from JS) -->
                     <div class="stat-card">
                         <div class="stat-header">
-                            <div class="stat-icon blue">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div class="stat-trend up">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>5.2%</span>
-                            </div>
+                            <div class="stat-icon blue"><i class="fas fa-wallet"></i></div>
                         </div>
                         <div class="stat-value" id="total-balance">RD$ 0</div>
                         <div class="stat-label">Balance Total</div>
                     </div>
-
                     <div class="stat-card">
                         <div class="stat-header">
-                            <div class="stat-icon green">
-                                <i class="fas fa-arrow-down"></i>
-                            </div>
-                            <div class="stat-trend up">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>12%</span>
-                            </div>
+                            <div class="stat-icon green"><i class="fas fa-arrow-down"></i></div>
                         </div>
                         <div class="stat-value" id="total-income">RD$ 0</div>
-                        <div class="stat-label">Ingresos del Mes</div>
+                        <div class="stat-label">Ingresos Mes</div>
                     </div>
-
                     <div class="stat-card">
                         <div class="stat-header">
-                            <div class="stat-icon red">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="stat-trend down">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>8%</span>
-                            </div>
+                            <div class="stat-icon red"><i class="fas fa-shopping-cart"></i></div>
                         </div>
                         <div class="stat-value" id="total-expenses">RD$ 0</div>
-                        <div class="stat-label">Gastos del Mes</div>
+                        <div class="stat-label">Gastos Mes</div>
                     </div>
-
                     <div class="stat-card">
                         <div class="stat-header">
-                            <div class="stat-icon gold">
-                                <i class="fas fa-piggy-bank"></i>
-                            </div>
+                            <div class="stat-icon gold"><i class="fas fa-piggy-bank"></i></div>
                         </div>
                         <div class="stat-value" id="savings-rate">0%</div>
-                        <div class="stat-label">Tasa de Ahorro</div>
+                        <div class="stat-label">Tasa Ahorro</div>
                     </div>
                 </div>
 
-                <!-- Content Grid -->
-                <div class="content-grid">
+                <!-- Main Trend Chart -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Tendencias (Últimos 6 Meses)</h3>
+                    </div>
+                    <div class="card-body" style="height: 300px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="content-grid" style="margin-top:24px;">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Gastos por Categoria</h3>
-                            <span class="card-action">
-                                <i class="fas fa-download"></i>
-                                Exportar
-                            </span>
+                            <h3 class="card-title">Gastos por Categoría</h3>
                         </div>
-                        <div class="card-body">
-                            <div class="chart-container">
-                                <canvas id="expensesChart"></canvas>
+                        <div class="card-body"><canvas id="expensesChart"></canvas></div>
+                    </div>
+                    <!-- Coach Widget (Resumen) -->
+                    <div class="card" id="coach-widget">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-robot"></i> Coach IA</h3>
+                            <span class="card-action" onclick="navigateTo('coach')">Abrir Chat</span>
+                        </div>
+                        <div class="card-body" id="ai-recommendations"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. COACH IA VIEW (Chat Interface) -->
+            <div id="view-coach" class="view-section">
+                <div class="coach-layout"
+                    style="display: grid; grid-template-columns: 350px 1fr; gap: 20px; height: calc(100vh - 100px);">
+
+                    <!-- LEFT SIDEBAR: Contexto -->
+                    <aside class="coach-sidebar" style="overflow-y: auto; padding-right: 5px;">
+
+                        <!-- Profile Card -->
+                        <div class="card profile-fin-card"
+                            style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; margin-bottom: 20px;">
+                            <div class="card-body">
+                                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                                    <div class="avatar"
+                                        style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                        👤
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; font-weight: 600;">Mi Perfil</h4>
+                                        <span class="badge"
+                                            style="background: var(--primary); font-size: 0.75rem;">Premium</span>
+                                    </div>
+                                </div>
+                                <div class="mini-stats"
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div><small style="color: #94a3b8;">Ingresos</small>
+                                        <div id="coach-income" style="font-weight: 600;">RD$0</div>
+                                    </div>
+                                    <div><small style="color: #94a3b8;">Gastos</small>
+                                        <div id="coach-expenses" style="font-weight: 600;">RD$0</div>
+                                    </div>
+                                    <div
+                                        style="grid-column: span 2; margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                        <small style="color: #94a3b8;">Balance del Mes</small>
+                                        <div id="coach-balance" style="font-size: 1.1rem; color: var(--success);">RD$0
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Recomendaciones IA</h3>
+                        <!-- Numero Verde Display -->
+                        <div class="card green-number-card"
+                            style="margin-bottom: 20px; border-left: 4px solid var(--success);">
+                            <div class="card-body">
+                                <h5 style="color: var(--text-secondary); margin-bottom: 10px;">Tu Número Verde 🌱</h5>
+                                <div id="coach-green-number"
+                                    style="font-size: 2rem; font-weight: 700; color: var(--success);">RD$0</div>
+                                <p id="coach-green-desc"
+                                    style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;">
+                                    Este es tu dinero real disponible para gastar sin culpa hoy.
+                                </p>
+                            </div>
                         </div>
-                        <div class="card-body" id="ai-recommendations">
-                            <!-- Dynamic recommendations will be inserted here -->
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Recent Transactions -->
-                <div class="card" style="margin-top: 24px;">
-                    <div class="card-header">
-                        <h3 class="card-title">Transacciones Recientes</h3>
-                        <span class="card-action" onclick="openTransactionModal()">
-                            <i class="fas fa-plus"></i>
-                            Ver Todas
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div class="transaction-list" id="transaction-list">
-                            <!-- Dynamic transactions will be inserted here -->
+                        <!-- Sugerencias Contextuales -->
+                        <h5 style="margin-bottom: 15px; color: var(--text-secondary);">Sugerencias Rápidas</h5>
+                        <div id="coach-suggestions">
+                            <!-- Injected via JS -->
                         </div>
-                    </div>
-                </div>
 
-                <!-- Budget Overview -->
-                <div class="card" style="margin-top: 24px;">
-                    <div class="card-header">
-                        <h3 class="card-title">Estado de Presupuestos</h3>
-                        <span class="card-action">
-                            <i class="fas fa-cog"></i>
-                            Gestionar
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div id="budget-list">
-                            <!-- Dynamic budget items will be inserted here -->
+                    </aside>
+
+                    <!-- RIGHT AREA: Chat Interface -->
+                    <main class="chat-container"
+                        style="display: flex; flex-direction: column; background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;">
+
+                        <!-- Header Chat -->
+                        <div class="chat-header"
+                            style="padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 10px; height: 10px; background: var(--success); border-radius: 50%;">
+                                </div>
+                                <span style="font-weight: 600;">Coach FinanzasRD AI</span>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">En línea</span>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Savings Goals -->
-                <div class="card" style="margin-top: 24px;">
-                    <div class="card-header">
-                        <h3 class="card-title">Metas de Ahorro</h3>
-                        <span class="card-action" onclick="openGoalModal()">
-                            <i class="fas fa-plus"></i>
-                            Nueva Meta
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div id="goals-list">
-                            <!-- Dynamic goals will be inserted here -->
+                        <!-- Messages Area -->
+                        <div class="chat-messages" id="chat-messages"
+                            style="flex: 1; padding: 20px; overflow-y: auto; background-image: radial-gradient(#e2e8f0 1px, transparent 1px); background-size: 20px 20px;">
+                            <div class="message ai">
+                                <div class="msg-bubble">
+                                    👋 ¡Hola! Soy tu Coach Financiero. Veo que tienes algunos movimientos recientes. ¿En
+                                    qué nos enfocamos hoy?
+                                </div>
+                                <div class="msg-meta">Justo ahora</div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="export-buttons"
-                    style="position: fixed; bottom: 100px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 999;">
-                    <button class="export-btn pdf" onclick="exportToPDFInfographic()" title="Exportar infografía PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </button>
-                    <button class="export-btn excel" onclick="exportToExcel()" title="Exportar a Excel">
-                        <i class="fas fa-file-excel"></i>
-                    </button>
-                </div>
-            </div> <!-- End view-dashboard -->
 
-            <!-- Transactions View -->
+                        <!-- Quick Actions Panel -->
+                        <div id="quick-actions-panel"
+                            style="padding: 10px 20px; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap;">
+                            <!-- Injected via JS -->
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="chat-input-area"
+                            style="padding: 20px; border-top: 1px solid var(--border-color); background: white;">
+                            <div style="position: relative;">
+                                <input type="text" class="chat-input" id="chat-input"
+                                    placeholder="Escribe tu consulta..."
+                                    style="width: 100%; padding: 12px 50px 12px 15px; border-radius: 25px; border: 1px solid var(--border-color); outline: none; transition: all 0.3s;">
+                                <button class="chat-send-btn" onclick="sendChatMessage()"
+                                    style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer;">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+
+            <!-- 3. TRANSACCIONES VIEW -->
             <div id="view-transactions" class="view-section">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Historial de Transacciones</h3>
-                        <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
-                            <div class="search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="full-search-transactions" placeholder="Buscar...">
-                            </div>
-                            <span class="card-action" onclick="exportToPDFInfographic()"
-                                style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: var(--primary); font-weight: 500;">
-                                <i class="fas fa-file-pdf"></i>
-                                PDF
-                            </span>
-                            <span class="card-action" onclick="exportToExcel()"
-                                style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: var(--secondary); font-weight: 500;">
-                                <i class="fas fa-file-excel"></i>
-                                Excel
-                            </span>
+                        <div class="header-actions">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text"
+                                    id="full-search-transactions" placeholder="Buscar..."></div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -277,68 +299,81 @@
                 </div>
             </div>
 
-            <!-- Budgets View -->
-            <div id="view-budgets" class="view-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Presupuestos Detallados</h3>
-                        <span class="card-action" onclick="openBudgetModal()">
-                            <i class="fas fa-plus"></i>
-                            Nuevo Presupuesto
-                        </span>
+            <!-- 4. PLANIFICACIÓN VIEW (Metas + Presupuestos) -->
+            <div id="view-planning" class="view-section">
+                <h2 style="margin-bottom:20px;">Tu Mapa Financiero</h2>
+                <div class="planning-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🛡️ Fondo de Emergencia</h3>
+                            <span id="emergency-months" style="font-weight:bold; color:var(--secondary);">0 Meses</span>
+                        </div>
+                        <div class="card-body" id="emergency-widget"></div>
                     </div>
-                    <div class="card-body">
-                        <div id="full-budget-list"></div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🎯 Metas de Ahorro</h3>
+                            <span class="card-action" onclick="openGoalModal()"><i class="fas fa-plus"></i> Nueva</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="full-goals-list"></div>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Goals View -->
-            <div id="view-goals" class="view-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Mis Metas de Ahorro</h3>
-                        <span class="card-action" onclick="openGoalModal()">
-                            <i class="fas fa-plus"></i>
-                            Nueva Meta
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <div id="full-goals-list"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Insights Component -->
-            <div id="view-insights" class="view-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Analisis y Recomendaciones</h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="full-recommendations-list"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Accounts Component -->
-            <div id="view-accounts" class="view-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Cuentas Bancarias</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>Gestion de cuentas vinculadas.</p>
-                        <div class="stat-card" style="margin-top: 16px;">
-                            <div class="stat-header">
-                                <div class="stat-icon blue"><i class="fas fa-university"></i></div>
-                            </div>
-                            <div class="stat-value">Banreservas</div>
-                            <div class="stat-label">Debito **** 1234</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Presupuestos Mensuales</h3>
+                            <span class="card-action" onclick="openBudgetModal()"><i class="fas fa-plus"></i>
+                                Nuevo</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="full-budget-list"></div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- 5. DEUDAS VIEW -->
+            <div id="view-debts" class="view-section">
+                <h2 style="margin-bottom:20px;">Plan "Adiós Deudas"</h2>
+                <div class="debt-strategy-box">
+                    <h3>⛓️‍💥 Tu Estrategia Recomendada: <span id="debt-strategy-name">Analizando...</span></h3>
+                    <p id="debt-strategy-desc">Agrega tus deudas para calcular tu fecha de libertad financiera.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Tus Deudas Activas</h3>
+                        <span class="card-action" onclick="openDebtModal()"><i class="fas fa-plus"></i> Agregar
+                            Deuda</span> <!-- Placeholder func -->
+                    </div>
+                    <div class="card-body">
+                        <div id="debts-list-container">
+                            <div class="text-center" style="padding:20px; color:#999;">No hay deudas registradas.
+                                ¡Excelente!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. REPORTES VIEW -->
+            <div id="view-reports" class="view-section">
+                <div class="report-header">
+                    <h1>📊 Central de Reportes</h1>
+                    <p>Exporta tu data y visualiza tu progreso anual.</p>
+                </div>
+                <div class="export-panel">
+                    <div class="export-card" onclick="exportToPDFInfographic()">
+                        <i class="fas fa-file-pdf" style="font-size:3em; color:#ef4444; margin-bottom:10px;"></i>
+                        <h3>Infografía Mensual</h3>
+                        <p>Resumen visual para compartir.</p>
+                    </div>
+                    <div class="export-card" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel" style="font-size:3em; color:#22c55e; margin-bottom:10px;"></i>
+                        <h3>Data Bruta (Excel)</h3>
+                        <p>Todas tus transacciones.</p>
+                    </div>
+                </div>
+            </div>
+
 
         </main>
     </div>

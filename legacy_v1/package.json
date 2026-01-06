@@ -1,0 +1,42 @@
+{
+  "name": "finanzasrd-ai",
+  "version": "1.0.0",
+  "description": "Asistente Financiero con IA para República Dominicana - Aplicación web completa",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . -p 3000",
+    "build": "echo 'No build step needed - static HTML/CSS/JS'",
+    "test": "echo 'No tests configured yet'",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "keywords": [
+    "finance",
+    "ai",
+    "dominican-republic",
+    "dashboard",
+    "personal-finance",
+    "money-management"
+  ],
+  "author": "MiniMax Agent",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/finanzasrd-ai"
+  },
+  "bugs": {
+    "url": "https://github.com/example/finanzasrd-ai/issues"
+  },
+  "homepage": "https://github.com/example/finanzasrd-ai",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.0.0",
+    "xlsx": "^0.18.5"
+  }
+}
