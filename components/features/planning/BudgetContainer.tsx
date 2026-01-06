@@ -1,11 +1,16 @@
 "use client";
 
+
+
+import { useState } from "react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
 import { PieChart, AlertCircle } from "lucide-react";
+import { BudgetModal } from "./BudgetModal";
 
 export function BudgetContainer() {
     const { budgetConfigs, transactions } = useFinancial();
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Calculate distinct categories actually used
     const categories = budgetConfigs;
@@ -16,7 +21,12 @@ export function BudgetContainer() {
                 <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <PieChart className="text-indigo-500" size={20} /> Presupuestos Mensuales
                 </h3>
-                <button className="text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Editar Límites</button>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                >
+                    Editar Límites
+                </button>
             </div>
 
             <div className="space-y-3">
@@ -64,11 +74,19 @@ export function BudgetContainer() {
                 })}
 
                 {categories.length === 0 && (
-                    <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">
-                        No has configurado presupuestos.
+                    <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                        No has configurado presupuestos. <br />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="mt-1 text-indigo-500 hover:text-indigo-600 font-medium"
+                        >
+                            Configurar ahora
+                        </button>
                     </div>
                 )}
             </div>
+
+            <BudgetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 }

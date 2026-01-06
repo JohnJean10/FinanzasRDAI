@@ -9,7 +9,8 @@ import {
     CreditCard,
     FileText,
     Settings,
-    Menu
+    Menu,
+    ArrowRightLeft
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ import { ModeToggle } from "@/components/ui/mode-toggle";
 
 const MENU_ITEMS = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Transacciones", href: "/transactions", icon: ArrowRightLeft },
     { name: "Coach IA", href: "/coach", icon: MessageSquare },
     { name: "Planificación", href: "/planning", icon: Map },
     { name: "Deudas", href: "/debts", icon: CreditCard },

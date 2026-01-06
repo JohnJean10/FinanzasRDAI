@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Gestión inteligente de tus finanzas personales",
 };
 
+import { OnboardingGuard } from "@/components/auth/OnboardingGuard";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,10 +30,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FinancialProvider>
-            <Sidebar />
-            <main className="lg:pl-64 min-h-screen transition-all duration-200">
-              {children}
-            </main>
+            <OnboardingGuard>
+              <Sidebar />
+              <main className="lg:pl-64 min-h-screen transition-all duration-200">
+                {children}
+              </main>
+            </OnboardingGuard>
           </FinancialProvider>
         </ThemeProvider>
       </body>

@@ -1,14 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Target } from "lucide-react";
+import { Plus, Target, ArrowUpCircle } from "lucide-react";
+import { AddGoalModal } from "./AddGoalModal";
+import { DepositModal } from "./DepositModal";
+import { Goal } from "@/lib/types";
 
 export function GoalsContainer() {
     const { goals } = useFinancial();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    const [isDepositOpen, setIsDepositOpen] = useState(false);
 
     // Filter out Emergency Goal as it's shown separately
     const otherGoals = goals.filter(g => !g.name.toLowerCase().includes('emergencia'));
+
+    const handleDeposit = (goal: Goal) => {
+        setSelectedGoal(goal);
+        setIsDepositOpen(true);
+    }
 
     return (
         <div className="space-y-4">
@@ -16,7 +28,10 @@ export function GoalsContainer() {
                 <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <Target className="text-purple-500" size={20} /> Metas de Ahorro
                 </h3>
-                <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium flex items-center gap-1">
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium flex items-center gap-1"
+                >
                     <Plus size={16} /> Nueva Meta
                 </button>
             </div>
@@ -25,7 +40,7 @@ export function GoalsContainer() {
                 {otherGoals.map(goal => {
                     const percent = Math.min((goal.current / goal.target) * 100, 100);
                     return (
-                        <div key={goal.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all">
+                        <div key={goal.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all relative group">
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">{goal.icon}</span>
@@ -34,7 +49,15 @@ export function GoalsContainer() {
                                         <p className="text-xs text-slate-500 dark:text-slate-400">Fecha Límite: {new Date(goal.deadline).toLocaleDateString()}</p>
                                     </div>
                                 </div>
-                                <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(goal.current)}</span>
+                                <div className="flex flex-col items-center min-w-[80px]">
+                                    <span className="font-bold text-slate-800 dark:text-white block">{formatCurrency(goal.current)}</span>
+                                    <button
+                                        onClick={() => handleDeposit(goal)}
+                                        className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center justify-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <ArrowUpCircle size={12} /> Aportar
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-2">
@@ -56,10 +79,18 @@ export function GoalsContainer() {
                 {otherGoals.length === 0 && (
                     <div className="text-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
                         <p className="text-slate-500 dark:text-slate-400 text-sm">No tienes metas activas.</p>
-                        <button className="mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium">Crear tu primera meta</button>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium"
+                        >
+                            Crear tu primera meta
+                        </button>
                     </div>
                 )}
             </div>
+
+            <AddGoalModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} goal={selectedGoal} />
         </div>
     );
 }

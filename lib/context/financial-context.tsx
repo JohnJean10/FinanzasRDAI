@@ -5,22 +5,23 @@ import { AppData, Transaction, Goal, Debt, BudgetConfig } from '../types';
 
 // Initial Mock Data (mirrors legacy app.js)
 const INITIAL_DATA: AppData = {
-    user: { name: 'Juan Diaz', monthlyIncome: 85000, profile: 'Premium' },
-    transactions: [
-        { id: 1, type: 'expense', description: 'Supermercado Bravo', amount: 4500, category: 'alimentacion', date: '2026-01-04', account: 'banreservas' },
-        { id: 2, type: 'income', description: 'Sueldo Enero', amount: 37500, category: 'ingreso_sueldo', date: '2026-01-15', account: 'bhd' },
-        { id: 3, type: 'expense', description: 'Uber Eats', amount: 850, category: 'entretenimiento', date: '2026-01-05', account: 'popular' }
-    ],
-    budgetConfigs: [
-        { category: 'alimentacion', limit: 15000 },
-        { category: 'transporte', limit: 5000 }
-    ],
-    goals: [
-        { id: 1, name: 'Clavo de Emergencia', target: 50000, current: 15000, deadline: '2026-06-01', icon: '🛡️' }
-    ],
-    debts: [
-        { id: 1, name: 'Tarjeta BHD', balance: 25000, rate: 60, minPayment: 1500 }
-    ]
+    user: {
+        name: 'Usuario Nuevo',
+        monthlyIncome: 0,
+        profile: 'Basico',
+        hasCompletedOnboarding: false,
+        currency: 'DOP',
+        language: 'es',
+        notifications: {
+            budgetAlerts: true,
+            goalAchievements: true,
+            debtReminders: true
+        }
+    },
+    transactions: [],
+    budgetConfigs: [],
+    goals: [],
+    debts: []
 };
 
 interface FinancialContextType extends AppData {
@@ -29,7 +30,9 @@ interface FinancialContextType extends AppData {
     updateTransaction: (id: number, updates: Partial<Transaction>) => void;
     addGoal: (g: Omit<Goal, 'id'>) => void;
     deleteGoal: (id: number) => void;
+    updateGoal: (id: number, updates: Partial<Goal>) => void;
     updateUser: (u: Partial<AppData['user']>) => void;
+    updateBudget: (category: string, limit: number) => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -89,6 +92,26 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         setData(prev => ({ ...prev, user: { ...prev.user, ...u } }));
     };
 
+    const updateBudget = (category: string, limit: number) => {
+        setData(prev => {
+            const existing = prev.budgetConfigs.find(b => b.category === category);
+            let newBudgets;
+            if (existing) {
+                newBudgets = prev.budgetConfigs.map(b => b.category === category ? { category, limit } : b);
+            } else {
+                newBudgets = [...prev.budgetConfigs, { category, limit }];
+            }
+            return { ...prev, budgetConfigs: newBudgets };
+        });
+    };
+
+    const updateGoal = (id: number, updates: Partial<Goal>) => {
+        setData(prev => ({
+            ...prev,
+            goals: prev.goals.map(g => g.id === id ? { ...g, ...updates } : g)
+        }));
+    };
+
     return (
         <FinancialContext.Provider value={{
             ...data,
@@ -97,7 +120,9 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             updateTransaction,
             addGoal,
             deleteGoal,
-            updateUser
+            updateGoal,
+            updateUser,
+            updateBudget
         }}>
             {children}
         </FinancialContext.Provider>

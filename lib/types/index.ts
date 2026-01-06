@@ -34,6 +34,14 @@ export interface UserProfile {
     name: string;
     monthlyIncome: number;
     profile: 'Basico' | 'Premium';
+    hasCompletedOnboarding: boolean;
+    currency: 'DOP' | 'USD';
+    language: 'es' | 'en';
+    notifications: {
+        budgetAlerts: boolean;
+        goalAchievements: boolean;
+        debtReminders: boolean;
+    };
 }
 
 export interface AppData {

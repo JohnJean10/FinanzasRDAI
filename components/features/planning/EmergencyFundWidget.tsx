@@ -1,23 +1,31 @@
 "use client";
 
+
+
+import { useState } from "react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
-import { Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, Plus } from "lucide-react";
+import { DepositModal } from "./DepositModal";
 
 export function EmergencyFundWidget() {
     const { transactions, goals } = useFinancial();
+    const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
     // 1. Calculate Average Monthly Expenses
     const expenses = transactions.filter(t => t.type === 'expense');
     const totalExpenses = expenses.reduce((acc, t) => acc + t.amount, 0);
     // Simplified logic: assume history is roughly 1 month for prototype
-    // In prod: group by month and average
     const avgMonthlyExpenses = totalExpenses || 1;
 
     // 2. Find Emergency Fund Goal
     const emergencyGoal = goals.find(g => g.name.toLowerCase().includes('emergencia')) || {
+        id: -1, // Dummy ID if not found
+        name: "Fondo de Emergencia",
         current: 0,
-        target: avgMonthlyExpenses * 3 // Default target: 3 months
+        target: avgMonthlyExpenses * 3,
+        deadline: "",
+        icon: "🛡️"
     };
 
     // 3. Calculate Runway
@@ -61,8 +69,8 @@ export function EmergencyFundWidget() {
                 {/* Visual Runway */}
                 <div className="space-y-4">
                     <div className="flex justify-between text-sm">
-                        <span className="text-slate-500 dark:text-slate-400">Cobetura Actual</span>
-                        <span className="font-bold text-slate-800 dark:text-white">{runwayMonths.toFixed(1)} Meses</span>
+                        <span className="text-slate-500 dark:text-slate-400">Cobertura Actual</span>
+                        <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(emergencyGoal.current)}</span>
                     </div>
                     <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
@@ -71,8 +79,8 @@ export function EmergencyFundWidget() {
                         ></div>
                     </div>
                     <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500">
-                        <span>0 Meses</span>
-                        <span>Meta: {targetMonths.toFixed(0)} Meses</span>
+                        <span>{formatCurrency(0)}</span>
+                        <span>Meta: {formatCurrency(emergencyGoal.target)}</span>
                     </div>
                 </div>
 
@@ -86,8 +94,26 @@ export function EmergencyFundWidget() {
                         <span className="text-sm text-slate-500 dark:text-slate-400">Gasto Mensual Prom.</span>
                         <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(avgMonthlyExpenses)}</span>
                     </div>
+
+                    {emergencyGoal.id !== -1 && (
+                        <button
+                            onClick={() => setIsDepositModalOpen(true)}
+                            className="w-full mt-2 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Plus size={16} /> Agregar Fondos
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* Deposit Modal - Only render if we have a valid goal */}
+            {emergencyGoal.id !== -1 && (
+                <DepositModal
+                    isOpen={isDepositModalOpen}
+                    onClose={() => setIsDepositModalOpen(false)}
+                    goal={emergencyGoal as any}
+                />
+            )}
         </div>
     );
 }

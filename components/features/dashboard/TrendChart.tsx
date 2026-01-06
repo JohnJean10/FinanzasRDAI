@@ -4,15 +4,42 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { useFinancial } from "@/lib/context/financial-context";
 
 export function TrendChart() {
-    // Mock data for 6 months history (Since context implies current month focus, we simulate history for UI)
-    const data = [
-        { month: 'Ago', income: 45000, expense: 32000 },
-        { month: 'Sep', income: 48000, expense: 35000 },
-        { month: 'Oct', income: 47000, expense: 42000 },
-        { month: 'Nov', income: 52000, expense: 38000 },
-        { month: 'Dic', income: 55000, expense: 60000 }, // Navidad
-        { month: 'Ene', income: 55000, expense: 28000 }, // Current
-    ];
+    const { transactions } = useFinancial();
+
+    // Generate last 6 months buckets
+    const getLast6Months = () => {
+        const months = [];
+        const today = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            months.push({
+                name: d.toLocaleDateString('es-DO', { month: 'short' }).charAt(0).toUpperCase() + d.toLocaleDateString('es-DO', { month: 'short' }).slice(1),
+                monthIndex: d.getMonth(),
+                year: d.getFullYear(),
+                income: 0,
+                expense: 0
+            });
+        }
+        return months;
+    };
+
+    const monthBuckets = getLast6Months();
+
+    // Fill buckets with transaction data
+    transactions.forEach(t => {
+        const tDate = new Date(t.date);
+        const bucket = monthBuckets.find(b => b.monthIndex === tDate.getMonth() && b.year === tDate.getFullYear());
+        if (bucket) {
+            if (t.type === 'income') bucket.income += t.amount;
+            if (t.type === 'expense') bucket.expense += t.amount;
+        }
+    });
+
+    const data = monthBuckets.map(b => ({
+        month: b.name,
+        income: b.income,
+        expense: b.expense
+    }));
 
     return (
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 h-[350px]">
