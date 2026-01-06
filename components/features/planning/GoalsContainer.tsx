@@ -40,7 +40,7 @@ export function GoalsContainer() {
                 {otherGoals.map(goal => {
                     const percent = Math.min((goal.current / goal.target) * 100, 100);
                     return (
-                        <div key={goal.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all relative group">
+                        <div key={goal.id} className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-blue-900/30 hover:shadow-md transition-all relative group">
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">{goal.icon}</span>

@@ -62,7 +62,7 @@ export function NetWorthChart() {
     }));
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 col-span-1 lg:col-span-2">
+        <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-blue-900/30 col-span-1 lg:col-span-2">
             <h3 className="font-bold text-slate-800 dark:text-white mb-2">Evolución de Patrimonio</h3>
             <p className="text-sm text-slate-500 mb-6">Crecimiento estimado de tus activos (Ahorros + Balance) en los últimos 6 meses.</p>
 
@@ -87,10 +87,10 @@ export function NetWorthChart() {
                             tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                         />
                         <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', color: '#1e293b', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ color: '#1e293b' }}
-                            labelStyle={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '4px' }}
+                            formatter={(value: any) => formatCurrency(value)}
+                        // itemStyle={{ color: '#1e293b' }}
+                        // contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', color: '#1e293b', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        // labelStyle={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '4px' }}
                         />
                         <Area type="monotone" dataKey="value" name="Patrimonio" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                     </AreaChart>

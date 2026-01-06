@@ -47,7 +47,7 @@ export function BudgetContainer() {
                     if (percent >= 100) color = "bg-red-500";
 
                     return (
-                        <div key={idx} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div key={idx} className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-blue-900/30">
                             <div className="flex justify-between mb-2">
                                 <span className="font-medium text-sm capitalize text-slate-700 dark:text-slate-200">
                                     {budget.category.replace('_', ' ')}
@@ -57,7 +57,7 @@ export function BudgetContainer() {
                                 </span>
                             </div>
 
-                            <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-2 bg-slate-50 dark:bg-blue-950/40 rounded-full overflow-hidden">
                                 <div
                                     className={`h-full rounded-full transition-all ${color}`}
                                     style={{ width: `${percent}%` }}

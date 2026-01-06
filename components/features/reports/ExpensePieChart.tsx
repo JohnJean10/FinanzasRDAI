@@ -35,7 +35,7 @@ export function ExpensePieChart() {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-blue-900/30">
             <h3 className="font-bold text-slate-800 dark:text-white mb-6">Distribución de Gastos</h3>
             <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">

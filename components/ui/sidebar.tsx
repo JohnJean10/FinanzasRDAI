@@ -43,20 +43,20 @@ export function Sidebar() {
             <aside
                 className={cn(
                     "fixed top-0 left-0 z-40 h-screen w-64 transition-transform duration-300 ease-in-out border-r shadow-xl lg:translate-x-0 lg:shadow-none",
-                    "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/60",
+                    "bg-gradient-to-b from-blue-900 to-indigo-950 border-r-0 text-white",
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 )}
             >
                 <div className="p-6 pb-2">
                     <div className="flex items-center gap-3 px-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/30">
+                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white font-bold shadow-lg backdrop-blur-sm border border-white/10">
                             F
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">
+                            <h1 className="text-xl font-bold text-white tracking-tight">
                                 FinanzasRD
                             </h1>
-                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">AI Assistant</p>
+                            <p className="text-[10px] font-semibold text-blue-200 uppercase tracking-wider">AI Assistant</p>
                         </div>
                     </div>
                 </div>
@@ -73,26 +73,26 @@ export function Sidebar() {
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
                                     isActive
-                                        ? "text-primary dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 font-semibold"
-                                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"
+                                        ? "text-white bg-white/10 font-semibold shadow-sm border border-white/5"
+                                        : "text-blue-200 hover:bg-white/5 hover:text-white"
                                 )}
                                 onClick={() => setIsOpen(false)}
                             >
                                 {isActive && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-r-full" />
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-400 rounded-r-full shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
                                 )}
-                                <Icon size={20} className={cn("transition-colors", isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300")} />
+                                <Icon size={20} className={cn("transition-colors", isActive ? "text-emerald-400" : "text-blue-300 group-hover:text-white")} />
                                 <span className="relative z-10">{item.name}</span>
                             </Link>
                         );
                     })}
                 </nav>
 
-                <div className="absolute bottom-0 w-full p-4 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                <div className="absolute bottom-0 w-full p-4 border-t border-white/10 bg-black/10 backdrop-blur-sm">
                     <div className="flex items-center justify-between gap-2">
                         <Link
                             href="/settings"
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:bg-white hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-all text-sm flex-1"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-blue-200 hover:bg-white/10 hover:text-white transition-all text-sm flex-1"
                         >
                             <Settings size={18} />
                             <span>Configuración</span>
@@ -100,7 +100,7 @@ export function Sidebar() {
                         <ModeToggle />
                     </div>
                 </div>
-            </aside>
+            </aside >
         </>
     );
 }

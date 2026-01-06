@@ -92,7 +92,7 @@ export function KPIGrid() {
             {kpis.map((kpi, idx) => (
                 <div
                     key={idx}
-                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-100 dark:border-slate-800 group"
+                    className="bg-white dark:bg-[#1e1b4b] p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-100 dark:border-slate-800 group"
                 >
                     <div className="flex justify-between items-start mb-4">
                         <div className={`p-3 rounded-xl bg-${kpi.color}-50 dark:bg-${kpi.color}-900/20 text-${kpi.color}-600 dark:text-${kpi.color}-400 group-hover:scale-110 transition-transform duration-300`}>

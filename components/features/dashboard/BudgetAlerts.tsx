@@ -63,7 +63,7 @@ export function BudgetAlerts() {
             {alerts.map((alert) => (
                 <div
                     key={alert.category}
-                    className="bg-white dark:bg-slate-900 border-l-4 border-red-500 shadow-xl rounded-r-xl p-4 flex items-start justify-between animate-in slide-in-from-right duration-500"
+                    className="bg-white dark:bg-[#0f172a] border-l-4 border-red-500 shadow-xl rounded-r-xl p-4 flex items-start justify-between animate-in slide-in-from-right duration-500"
                 >
                     <div className="flex gap-3">
                         <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-full h-fit text-red-600 dark:text-red-400">

@@ -2,8 +2,6 @@
 
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 
 export function RecentTransactions() {
     const { transactions } = useFinancial();
@@ -15,7 +13,7 @@ export function RecentTransactions() {
 
     if (recentTx.length === 0) {
         return (
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-100 dark:border-blue-900/30">
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-4">Actividad Reciente</h3>
                 <p className="text-sm text-slate-500 text-center py-4">No hay transacciones recientes.</p>
             </div>
@@ -23,11 +21,11 @@ export function RecentTransactions() {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <div className="bg-white dark:bg-[#0f172a] p-6 rounded-xl shadow-sm border border-slate-100 dark:border-blue-900/30">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-4">Actividad Reciente</h3>
             <div className="space-y-4">
                 {recentTx.map((t) => (
-                    <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-blue-950/40 rounded-lg">
                         <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold
                                 ${t.type === 'income'
