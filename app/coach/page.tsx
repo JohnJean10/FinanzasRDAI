@@ -1,5 +1,6 @@
 import { ChatInterface } from "@/components/features/coach/ChatInterface";
 import { CoachSidebar } from "@/components/features/coach/CoachSidebar";
+import { CoachSummaryWidget } from "@/components/features/coach/CoachSummaryWidget";
 
 export default function CoachPage() {
     return (
@@ -12,8 +13,11 @@ export default function CoachPage() {
                 </div>
 
                 {/* Main Chat Area */}
-                <div className="h-full">
-                    <ChatInterface />
+                <div className="h-full flex flex-col">
+                    <CoachSummaryWidget />
+                    <div className="flex-1 min-h-0">
+                        <ChatInterface />
+                    </div>
                 </div>
 
             </div>

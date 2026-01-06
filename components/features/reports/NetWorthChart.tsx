@@ -87,7 +87,7 @@ export function NetWorthChart() {
                             tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                         />
                         <Tooltip
-                            formatter={(value: any) => formatCurrency(value)}
+                            formatter={(value: any) => formatCurrency(Number(value))}
                         // itemStyle={{ color: '#1e293b' }}
                         // contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', color: '#1e293b', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         // labelStyle={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '4px' }}

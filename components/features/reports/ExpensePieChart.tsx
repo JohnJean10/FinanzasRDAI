@@ -55,8 +55,8 @@ export function ExpensePieChart() {
                             ))}
                         </Pie>
                         <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            formatter={(value: any) => formatCurrency(Number(value))}
+                            contentStyle={{ backgroundColor: 'white', borderRadius: '8px' }}
                         />
                         <Legend />
                     </PieChart>

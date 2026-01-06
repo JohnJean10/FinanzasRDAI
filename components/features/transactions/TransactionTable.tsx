@@ -42,8 +42,8 @@ export function TransactionTable({ onEdit }: TransactionTableProps) {
                             key={type}
                             onClick={() => setFilterType(type)}
                             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all capitalize ${filterType === type
-                                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                         >
                             {type === 'all' ? 'Todos' : type === 'income' ? 'Ingresos' : 'Gastos'}
@@ -76,7 +76,7 @@ export function TransactionTable({ onEdit }: TransactionTableProps) {
                                     </span>
                                 </td>
                                 <td className="p-4 text-slate-500 dark:text-slate-400 text-xs">
-                                    {new Date(t.date).toLocaleDateString()}
+                                    {new Date(t.date + 'T12:00:00').toLocaleDateString()}
                                 </td>
                                 <td className={`p-4 text-right font-bold font-mono ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
                                     {t.type === 'expense' && '-'} {formatCurrency(t.amount)}

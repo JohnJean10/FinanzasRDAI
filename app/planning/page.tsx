@@ -1,4 +1,5 @@
-import { EmergencyFundWidget } from "@/components/features/planning/EmergencyFundWidget";
+import { EmergencyFund } from "@/components/features/education/EmergencyFund";
+import { InvestmentGuide } from "@/components/features/education/InvestmentGuide";
 import { GoalsContainer } from "@/components/features/planning/GoalsContainer";
 import { BudgetContainer } from "@/components/features/planning/BudgetContainer";
 
@@ -11,13 +12,19 @@ export default function PlanningPage() {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Tus metas, presupuestos y estrategia a largo plazo</p>
             </div>
 
-            {/* Hero Widget: Emergency Fund */}
-            <EmergencyFundWidget />
+            {/* Advanced Emergency Fund Analysis */}
+            <EmergencyFund />
 
             {/* Two Column Layout for Goals and Budgets */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <GoalsContainer />
                 <BudgetContainer />
+            </div>
+
+            {/* Educational Investment Section */}
+            <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Guía de Inversión en RD</h2>
+                <InvestmentGuide />
             </div>
         </div>
     );

@@ -2,12 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppData, Transaction, Goal, Debt, BudgetConfig } from '../types';
+import { NotificationService, Notification } from '../services/notifications';
 
-// Initial Mock Data (mirrors legacy app.js)
+// Initial Mock Data
 const INITIAL_DATA: AppData = {
     user: {
         name: 'Usuario Nuevo',
         monthlyIncome: 0,
+        monthsOfPeace: 3, // Default
         profile: 'Basico',
         hasCompletedOnboarding: false,
         currency: 'DOP',
@@ -21,7 +23,8 @@ const INITIAL_DATA: AppData = {
     transactions: [],
     budgetConfigs: [],
     goals: [],
-    debts: []
+    debts: [],
+    notifications: []
 };
 
 interface FinancialContextType extends AppData {
@@ -33,12 +36,21 @@ interface FinancialContextType extends AppData {
     updateGoal: (id: number, updates: Partial<Goal>) => void;
     updateUser: (u: Partial<AppData['user']>) => void;
     updateBudget: (category: string, limit: number) => void;
+    addNotification: (n: Notification) => void;
+    markNotificationRead: (id: string) => void;
+    isTransactionModalOpen: boolean;
+    openTransactionModal: () => void;
+    closeTransactionModal: () => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
 
 export function FinancialProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>(INITIAL_DATA);
+    const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+
+    const openTransactionModal = () => setIsTransactionModalOpen(true);
+    const closeTransactionModal = () => setIsTransactionModalOpen(false);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -57,8 +69,79 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('finanzasrd_data_v2', JSON.stringify(data));
     }, [data]);
 
+    // --- EMERGENCY FUND AUTO-SYNC ---
+    useEffect(() => {
+        const monthsOfPeace = data.user.monthsOfPeace || 3;
+
+        // Calculate monthly expenses (Sum of all budgets EXCEPT 'ahorros')
+        const monthlyExpenses = data.budgetConfigs
+            .filter(b => b.category !== 'ahorros')
+            .reduce((sum, b) => sum + b.limit, 0);
+
+        const targetAmount = monthlyExpenses * monthsOfPeace;
+
+        if (targetAmount > 0) {
+            setData(prev => {
+                const exists = prev.goals.find(g => g.isNative && g.name === 'Fondo de Emergencia');
+
+                if (exists) {
+                    // Only update if target changed significantly
+                    if (Math.abs(exists.target - targetAmount) > 1) {
+                        return {
+                            ...prev,
+                            goals: prev.goals.map(g => g.id === exists.id ? { ...g, target: targetAmount } : g)
+                        };
+                    }
+                    return prev;
+                } else {
+                    // Create Native Goal
+                    const newGoal: Goal = {
+                        id: Date.now(),
+                        name: 'Fondo de Emergencia',
+                        current: 0,
+                        target: targetAmount,
+                        deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // 1 Year default
+                        icon: '🛡️',
+                        isNative: true,
+                        isLinkedToBudget: true,
+                        monthlyContribution: 0 // Will be calculated by user/system interaction later
+                    };
+                    return { ...prev, goals: [newGoal, ...prev.goals] };
+                }
+            });
+        }
+    }, [data.budgetConfigs, data.user.monthsOfPeace]);
+
+    const addNotification = (n: Notification) => {
+        setData(prev => ({ ...prev, notifications: [n, ...prev.notifications] }));
+    };
+
+    const markNotificationRead = (id: string) => {
+        setData(prev => ({
+            ...prev,
+            notifications: prev.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+        }));
+    };
+
     const addTransaction = (t: Omit<Transaction, 'id'>) => {
-        const newTx = { ...t, id: Date.now() };
+        const newTx = { ...t, id: Date.now() } as Transaction;
+
+        // Trigger Budget Check
+        if (t.type === 'expense') {
+            const budget = data.budgetConfigs.find(b => b.category === t.category);
+            if (budget) {
+                const currentMonth = new Date().getMonth();
+                const totalSpent = data.transactions
+                    .filter(tx => tx.category === t.category && tx.type === 'expense' && new Date(tx.date).getMonth() === currentMonth)
+                    .reduce((sum, tx) => sum + tx.amount, 0) + t.amount;
+
+                const alert = NotificationService.checkBudgetThreshold(t.category, totalSpent, budget.limit);
+                if (alert) {
+                    addNotification(alert);
+                }
+            }
+        }
+
         setData(prev => ({ ...prev, transactions: [newTx, ...prev.transactions] }));
     };
 
@@ -77,13 +160,14 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     };
 
     const addGoal = (g: Omit<Goal, 'id'>) => {
-        const newGoal = { ...g, id: Date.now() };
+        const newGoal = { ...g, id: Date.now() } as Goal;
         setData(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
     };
 
     const deleteGoal = (id: number) => {
         setData(prev => ({
             ...prev,
+            notifications: prev.notifications || [], // Safety check
             goals: prev.goals.filter(g => g.id !== id)
         }));
     };
@@ -106,10 +190,42 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     };
 
     const updateGoal = (id: number, updates: Partial<Goal>) => {
-        setData(prev => ({
-            ...prev,
-            goals: prev.goals.map(g => g.id === id ? { ...g, ...updates } : g)
-        }));
+        setData(prev => {
+            const updatedGoals = prev.goals.map(g => {
+                if (g.id === id) {
+                    const newGoal = { ...g, ...updates };
+                    // Trigger Goal Completion Check
+                    if (newGoal.current >= newGoal.target && g.current < g.target) {
+                        const achievement = NotificationService.checkSavingsGoal(newGoal.name, newGoal.current, newGoal.target);
+                        if (achievement) {
+                            // Can't call addNotification here directly due to state update batching/logic
+                            // Usually better to handle side effects in useEffect or separate function
+                            // but for this MVP, we'll append to the new state object
+                            return { ...newGoal, _triggeredAchievement: achievement };
+                        }
+                    }
+                    return newGoal;
+                }
+                return g;
+            });
+
+            // Extract achievements if any
+            const achievements = updatedGoals
+                .filter((g: any) => g._triggeredAchievement)
+                .map((g: any) => g._triggeredAchievement);
+
+            // Clean up temporary property
+            const cleanGoals = updatedGoals.map((g: any) => {
+                const { _triggeredAchievement, ...rest } = g;
+                return rest;
+            }) as Goal[];
+
+            return {
+                ...prev,
+                goals: cleanGoals,
+                notifications: [...achievements, ...prev.notifications]
+            };
+        });
     };
 
     return (
@@ -122,7 +238,12 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             deleteGoal,
             updateGoal,
             updateUser,
-            updateBudget
+            updateBudget,
+            addNotification,
+            markNotificationRead,
+            isTransactionModalOpen,
+            openTransactionModal,
+            closeTransactionModal
         }}>
             {children}
         </FinancialContext.Provider>

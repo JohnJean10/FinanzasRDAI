@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { FinancialProvider } from "@/lib/context/financial-context";
 import { Sidebar } from "@/components/ui/sidebar";
+import { GlobalAddButton } from "@/components/ui/GlobalAddButton";
+import { AddTransactionModal } from "@/components/features/transactions/AddTransactionModal";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -35,6 +37,9 @@ export default function RootLayout({
               <main className="lg:pl-64 min-h-screen transition-all duration-200">
                 {children}
               </main>
+              {/* Global Components */}
+              <GlobalAddButton />
+              <AddTransactionModal />
             </OnboardingGuard>
           </FinancialProvider>
         </ThemeProvider>

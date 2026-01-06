@@ -87,19 +87,36 @@ export function CoachSidebar() {
                         </div>
                     )}
 
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-200 transition-colors">
-                                <Wallet size={18} />
-                            </div>
-                            <div>
-                                <h6 className="font-medium text-slate-800 text-sm">Ahorro Inteligente</h6>
-                                <p className="text-slate-500 text-xs mt-1">
-                                    Podrías mover RD$3,500 al fondo de emergencia hoy.
-                                </p>
+                    {/* Dynamic Savings/Alert Card */}
+                    {balance > 0 ? (
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-200 transition-colors">
+                                    <Wallet size={18} />
+                                </div>
+                                <div>
+                                    <h6 className="font-medium text-slate-800 text-sm">Ahorro Inteligente</h6>
+                                    <p className="text-slate-500 text-xs mt-1">
+                                        Tienes un superávit de {formatCurrency(balance)}. Podrías mover {formatCurrency(balance * 0.5)} al fondo de emergencia hoy.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-amber-100 text-amber-600 rounded-lg group-hover:bg-amber-200 transition-colors">
+                                    <AlertCircle size={18} />
+                                </div>
+                                <div>
+                                    <h6 className="font-medium text-slate-800 text-sm">Atención Gastos</h6>
+                                    <p className="text-slate-500 text-xs mt-1">
+                                        Tus gastos superan tus ingresos por {formatCurrency(Math.abs(balance))}. Revisa tu presupuesto.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </aside>

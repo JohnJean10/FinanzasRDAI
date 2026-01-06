@@ -47,11 +47,9 @@ export function BudgetBarChart() {
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" width={100} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                         <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
+                            formatter={(value: any) => formatCurrency(Number(value))}
                             cursor={{ fill: 'transparent' }}
-                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', color: '#1e293b', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ color: '#1e293b' }}
-                            labelStyle={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '4px' }}
+                            contentStyle={{ backgroundColor: 'white', color: '#1e293b' }}
                         />
                         <Legend />
                         <Bar dataKey="Presupuesto" fill="#e2e8f0" radius={[0, 4, 4, 0]} barSize={20} />

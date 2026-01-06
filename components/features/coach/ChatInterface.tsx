@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 import { useFinancial } from "@/lib/context/financial-context";
 import { cn } from "@/lib/utils";
 
@@ -76,13 +77,67 @@ export function ChatInterface() {
         }
     };
 
+    // Generate dynamic suggestions based on data
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+
+    useEffect(() => {
+        const calculateSuggestions = () => {
+            const chips = ['💰 Balance General']; // Always present
+
+            // 1. Check for negative balance
+            const currentMonth = new Date().getMonth();
+            const income = transactions
+                .filter(t => t.type === 'income' && new Date(t.date).getMonth() === currentMonth)
+                .reduce((sum, t) => sum + t.amount, 0);
+            const expenses = transactions
+                .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === currentMonth)
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            if (expenses > income && income > 0) {
+                chips.push('⚠️ Gasto más de lo que gano');
+            }
+
+            // 2. Check for high spending categories
+            const categoryTotals = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((acc, t) => {
+                    acc[t.category] = (acc[t.category] || 0) + t.amount;
+                    return acc;
+                }, {} as Record<string, number>);
+
+            const topCategory = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a)[0];
+            if (topCategory && topCategory[1] > (income * 0.3) && income > 0) {
+                chips.push(`🍔 Reducir gastos en ${topCategory[0]}`);
+            }
+
+            // 3. New user check
+            if (transactions.length === 0) {
+                chips.push('👋 ¿Cómo empiezo a organizarme?');
+            }
+
+            // 4. Savings Goal check
+            if (user.monthlyIncome > 0 && (income - expenses) > (user.monthlyIncome * 0.2)) {
+                chips.push('📈 ¿Dónde invierto mis ahorros?');
+            }
+
+            // Fallback
+            if (chips.length < 3) {
+                chips.push('🎯 Establecer Metas', '📉 Analizar mis gastos');
+            }
+
+            setSuggestions(chips.slice(0, 4));
+        };
+
+        calculateSuggestions();
+    }, [transactions, user]);
+
     const QuickActions = () => (
         <div className="flex gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar">
-            {['💰 Balance General', '📉 Mis Gastos', '🎯 Metas'].map((action) => (
+            {suggestions.map((action) => (
                 <button
                     key={action}
                     onClick={() => setInput(action)}
-                    className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
                 >
                     {action}
                 </button>
@@ -140,7 +195,26 @@ export function ChatInterface() {
                                         : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-tl-sm border border-slate-100 dark:border-slate-700/50 shadow-sm"
                                 )}
                             >
-                                {msg.text}
+                                <div className="markdown-content">
+                                    <ReactMarkdown
+                                        components={{
+                                            h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-2" {...props} />,
+                                            h2: ({ node, ...props }) => <h2 className="text-base font-bold mb-2 mt-3" {...props} />,
+                                            h3: ({ node, ...props }) => <h3 className="text-sm font-bold mb-1 mt-2" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+                                            ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
+                                            li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
+                                            p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                            strong: ({ node, ...props }) => <strong className="font-bold text-emerald-600 dark:text-emerald-400" {...props} />,
+                                            table: ({ node, ...props }) => <div className="overflow-x-auto my-2"><table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-xs" {...props} /></div>,
+                                            thead: ({ node, ...props }) => <thead className="bg-slate-50 dark:bg-slate-900/50" {...props} />,
+                                            th: ({ node, ...props }) => <th className="px-3 py-2 text-left font-medium text-slate-500 uppercase tracking-wider" {...props} />,
+                                            td: ({ node, ...props }) => <td className="px-3 py-2 whitespace-nowrap" {...props} />,
+                                        }}
+                                    >
+                                        {msg.text}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
                         </div>
                         <span className="text-[10px] text-slate-400 mt-1 px-9 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -155,10 +229,13 @@ export function ChatInterface() {
                             <Bot size={12} className="text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl rounded-tl-sm border border-slate-100 dark:border-slate-700 shadow-sm">
-                            <div className="flex gap-1.5">
-                                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
-                                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                            <div className="flex items-center gap-3">
+                                <div className="flex gap-1.5">
+                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
+                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                                </div>
+                                <span className="text-xs text-slate-400 font-medium animate-pulse">Analizando tus finanzas...</span>
                             </div>
                         </div>
                     </div>

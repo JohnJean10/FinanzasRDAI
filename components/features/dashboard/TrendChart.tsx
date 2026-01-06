@@ -85,7 +85,7 @@ export function TrendChart() {
                                 backgroundColor: 'var(--background)',
                                 borderColor: 'var(--border)',
                                 borderRadius: '12px',
-                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                             }}
                             itemStyle={{ fontSize: '12px', fontWeight: '600' }}
                             cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '3 3' }}
