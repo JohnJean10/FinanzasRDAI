@@ -5,85 +5,54 @@ import { formatCurrency } from "@/lib/utils";
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 export function KPIGrid() {
-    const { transactions } = useFinancial();
+    const { metrics } = useFinancial();
 
-    // Calculate current month stats
-    const now = new Date();
-    const currentMonthIdx = now.getMonth();
-    const currentYear = now.getFullYear();
+    // Mapping context metrics to UI
+    const { balance, totalIncome, totalExpenses, savingsRate } = metrics;
 
-    const currentMonthTx = transactions.filter(t => {
-        const d = new Date(t.date);
-        return d.getMonth() === currentMonthIdx && d.getFullYear() === currentYear;
-    });
-
-    const income = currentMonthTx.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const expenses = currentMonthTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    const balance = income - expenses;
-    const savings = income > 0 ? ((income - expenses) / income) * 100 : 0;
-
-    // Calculate previous month stats
-    const prevMonthDate = new Date(currentYear, currentMonthIdx - 1, 1);
-    const prevMonthIdx = prevMonthDate.getMonth();
-    const prevYear = prevMonthDate.getFullYear();
-
-    const prevMonthTx = transactions.filter(t => {
-        const d = new Date(t.date);
-        return d.getMonth() === prevMonthIdx && d.getFullYear() === prevYear;
-    });
-
-    const prevIncome = prevMonthTx.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const prevExpenses = prevMonthTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    const prevBalance = prevIncome - prevExpenses;
-    const prevSavings = prevIncome > 0 ? ((prevIncome - prevExpenses) / prevIncome) * 100 : 0;
-
-    const calculateChange = (current: number, previous: number) => {
-        if (previous === 0) return current > 0 ? "+100%" : "0%";
-        const change = ((current - previous) / previous) * 100;
-        return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
-    };
-
-    const incomeChange = calculateChange(income, prevIncome);
-    const expenseChange = calculateChange(expenses, prevExpenses);
-    const balanceChange = calculateChange(balance, prevBalance);
-    const savingsChange = calculateChange(savings, prevSavings);
+    // For now, we disable the trend comparison as the advanced context only calculates the selected period.
+    // Future improvement: Calculate previous period metrics in context.
+    const incomeChange = "-";
+    const expenseChange = "-";
+    const balanceChange = "-";
+    const savingsChange = "-";
 
     const kpis = [
         {
-            title: "Balance Total",
+            title: "Balance Histórico", // Renamed for clarity as per context logic
             value: formatCurrency(balance),
             icon: DollarSign,
             color: "blue",
             change: balanceChange,
-            trend: balance >= prevBalance ? "up" : "down",
-            sentiment: balance >= prevBalance ? "positive" : "negative"
+            trend: "neutral", // No trend for now
+            sentiment: "neutral"
         },
         {
             title: "Ingresos",
-            value: formatCurrency(income),
+            value: formatCurrency(totalIncome),
             icon: TrendingUp,
             color: "emerald",
             change: incomeChange,
-            trend: income >= prevIncome ? "up" : "down",
-            sentiment: income >= prevIncome ? "positive" : "negative"
+            trend: "neutral",
+            sentiment: "neutral"
         },
         {
             title: "Gastos",
-            value: formatCurrency(expenses),
+            value: formatCurrency(totalExpenses),
             icon: TrendingDown,
             color: "red",
             change: expenseChange,
-            trend: expenses >= prevExpenses ? "up" : "down",
-            sentiment: expenses < prevExpenses ? "positive" : "negative" // Less expenses is positive
+            trend: "neutral",
+            sentiment: "neutral"
         },
         {
-            title: "Ahorro",
-            value: `${savings.toFixed(1)}%`,
+            title: "Tasa de Ahorro",
+            value: `${savingsRate.toFixed(1)}%`,
             icon: PiggyBank,
             color: "purple",
             change: savingsChange,
-            trend: savings >= prevSavings ? "up" : "down",
-            sentiment: savings >= prevSavings ? "positive" : "negative"
+            trend: "neutral",
+            sentiment: "neutral"
         }
     ];
 

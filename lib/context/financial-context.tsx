@@ -2,7 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppData, Transaction, Goal, Debt, BudgetConfig } from '../types';
+import { AppData, Transaction, Goal, Debt, BudgetConfig, TimeRange } from '../types';
 import { NotificationService, Notification } from '../services/notifications';
+import { getBudgetMonthDate } from '../utils';
 
 // Initial Mock Data
 const INITIAL_DATA: AppData = {
@@ -41,6 +43,15 @@ interface FinancialContextType extends AppData {
     isTransactionModalOpen: boolean;
     openTransactionModal: () => void;
     closeTransactionModal: () => void;
+    timeRange: TimeRange;
+    setTimeRange: (range: TimeRange) => void;
+    metrics: {
+        totalIncome: number;
+        totalExpenses: number;
+        balance: number;
+        savingsRate: number;
+        monthlyBurnRate: number;
+    };
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -48,6 +59,7 @@ const FinancialContext = createContext<FinancialContextType | undefined>(undefin
 export function FinancialProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>(INITIAL_DATA);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    const [timeRange, setTimeRange] = useState<TimeRange>('thisMonth');
 
     const openTransactionModal = () => setIsTransactionModalOpen(true);
     const closeTransactionModal = () => setIsTransactionModalOpen(false);
@@ -64,10 +76,91 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    // Save to localStorage on change
     useEffect(() => {
         localStorage.setItem('finanzasrd_data_v2', JSON.stringify(data));
     }, [data]);
+
+    // --- CÁLCULO DE MÉTRICAS CON SEGMENTACIÓN TEMPORAL AVANZADA ---
+    const metrics = useMemo(() => {
+        const { transactions } = data; // Destructure transactions from data
+        const now = new Date();
+        let startDate = new Date();
+        let endDate = new Date();
+
+        // Configuración de Fechas (El corazón de la segmentación)
+        switch (timeRange) {
+            case 'thisMonth':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                break;
+            case 'lastMonth':
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                break;
+            case 'last3Months': // Trimestral
+                startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                break;
+            case 'last4Months': // Cuatrimestral (Tu pedido)
+                startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                break;
+            case 'last6Months': // Semestral
+                startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                break;
+            case 'last12Months': // Anual (Rolling)
+                startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                break;
+            case 'ytd': // Year to Date
+                startDate = new Date(now.getFullYear(), 0, 1);
+                endDate = now;
+                break;
+            case 'all': // Histórico
+                startDate = new Date(0);
+                endDate = new Date(now.getFullYear() + 10, 0, 1);
+                break;
+        }
+
+        // 1. "La Foto" (Balance): Acumulado histórico HASTA la fecha de corte seleccionada
+        const historicalBalance = transactions.reduce((acc, t) => {
+            const tDate = new Date(t.date);
+            // Si elijo "Mes Pasado", el balance debe ser el que tenía EL ÚLTIMO DÍA del mes pasado
+            if (tDate <= endDate) {
+                return acc + (t.type === 'income' ? t.amount : -t.amount);
+            }
+            return acc;
+        }, 0);
+
+        // 2. "La Película" (Flujo): Ingresos/Gastos DENTRO del rango seleccionado
+        const periodMetrics = transactions.reduce(
+            (acc, t) => {
+                // Aplicamos tu lógica de "Rollover" (Día 31 -> Mes siguiente)
+                const smartDate = getBudgetMonthDate(t.date, t.type);
+
+                if (smartDate >= startDate && smartDate <= endDate) {
+                    if (t.type === 'income') acc.income += t.amount;
+                    if (t.type === 'expense') acc.expense += t.amount;
+                }
+                return acc;
+            },
+            { income: 0, expense: 0 }
+        );
+
+        const savingsRate = periodMetrics.income > 0
+            ? ((periodMetrics.income - periodMetrics.expense) / periodMetrics.income) * 100
+            : 0;
+
+        return {
+            totalIncome: periodMetrics.income,
+            totalExpenses: periodMetrics.expense,
+            balance: historicalBalance,
+            savingsRate,
+            monthlyBurnRate: periodMetrics.expense
+        };
+
+    }, [data.transactions, timeRange]);
 
     // --- EMERGENCY FUND AUTO-SYNC ---
     useEffect(() => {
@@ -243,7 +336,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             markNotificationRead,
             isTransactionModalOpen,
             openTransactionModal,
-            closeTransactionModal
+            closeTransactionModal,
+            timeRange,
+            setTimeRange,
+            metrics
         }}>
             {children}
         </FinancialContext.Provider>

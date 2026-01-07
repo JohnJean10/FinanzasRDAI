@@ -37,6 +37,16 @@ export interface Debt {
     minPayment: number;
 }
 
+export type TimeRange =
+    | 'thisMonth'    // Mes Actual
+    | 'lastMonth'    // Mes Anterior
+    | 'last3Months'  // Trimestral (Rolling)
+    | 'last4Months'  // Cuatrimestral (Rolling) - ¡Pedido especial!
+    | 'last6Months'  // Semestral (Rolling)
+    | 'last12Months' // Anual (Rolling)
+    | 'ytd'          // Year to Date (Desde Enero 1)
+    | 'all';         // Histórico completo
+
 export interface UserProfile {
     name: string;
     monthlyIncome: number;

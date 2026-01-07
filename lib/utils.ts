@@ -137,3 +137,13 @@ export function calculateCashFlowPrediction(currentBalance: number, patterns: Re
 
     return weeks;
 }
+
+export function getBudgetMonthDate(dateStr: string, type: string) {
+    const d = new Date(dateStr);
+    // Rollover logic: If day is 31, count as next month
+    if (d.getDate() === 31) {
+        d.setDate(1);
+        d.setMonth(d.getMonth() + 1);
+    }
+    return d;
+}
