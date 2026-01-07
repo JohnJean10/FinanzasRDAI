@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Transaction } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -147,3 +148,58 @@ export function getBudgetMonthDate(dateStr: string, type: string) {
     }
     return d;
 }
+
+export const processRecurringTransactions = (transactions: Transaction[]): { newTransactions: Transaction[], updatedBaseTransactions: Transaction[] } => {
+    const today = new Date();
+    const newTransactions: Transaction[] = [];
+    // Deep copy segura
+    const updatedBase = JSON.parse(JSON.stringify(transactions));
+    let hasChanges = false;
+
+    updatedBase.forEach((t: Transaction) => {
+        // Validación estricta: Debe ser recurrente Y tener próxima fecha
+        if (t.isRecurring && t.nextPaymentDate) {
+            let nextDate = new Date(t.nextPaymentDate);
+
+            // Si la fecha próxima ya pasó o es hoy, ¡A TRABAJAR!
+            if (nextDate <= today) {
+                console.log(`⚡ Procesando recurrencia para: ${t.description} (Tocaba: ${nextDate.toISOString().split('T')[0]})`);
+                hasChanges = true;
+
+                // Bucle para ponerse al día (por si pasaron 3 meses sin abrir la app)
+                while (nextDate <= today) {
+                    const newTrans: Transaction = {
+                        ...t,
+                        id: Date.now() + Math.floor(Math.random() * 10000), // Numeric ID compatible
+                        date: nextDate.toISOString(),
+                        isRecurring: false, // La hija NO es recurrente, es un pago único
+                        nextPaymentDate: undefined,
+                        description: `${t.description} (Auto)`
+                    };
+
+                    newTransactions.push(newTrans);
+                    console.log(`   -> Generada transacción para: ${newTrans.date.split('T')[0]}`);
+
+                    // Calcular la SIGUIENTE fecha
+                    switch (t.frequency) {
+                        case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
+                        case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
+                        case 'biweekly': nextDate.setDate(nextDate.getDate() + 14); break;
+                        case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+                        case 'yearly': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+                        default: nextDate.setMonth(nextDate.getMonth() + 1);
+                    }
+                }
+
+                // Actualizamos la transacción MADRE con la nueva fecha futura
+                t.nextPaymentDate = nextDate.toISOString();
+                console.log(`   -> Próximo cobro actualizado a: ${t.nextPaymentDate.split('T')[0]}`);
+            }
+        }
+    });
+
+    // Si no hubo cambios, devolvemos arrays vacíos para no renderizar
+    if (!hasChanges) return { newTransactions: [], updatedBaseTransactions: [] };
+
+    return { newTransactions, updatedBaseTransactions: updatedBase };
+};

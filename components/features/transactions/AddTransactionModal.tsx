@@ -72,17 +72,43 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const amountVal = parseFloat(formData.amount);
 
+        // 1. Calcular la próxima fecha de pago si es recurrente
+        let nextPaymentDate = undefined;
+        if (formData.isRecurring && formData.date) {
+            const dateObj = new Date(formData.date + "T12:00:00"); // Usamos el truco de mediodía
+
+            // Clonamos para no afectar la fecha original
+            const nextDate = new Date(dateObj);
+
+            switch (formData.frequency) {
+                case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
+                case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
+                case 'biweekly': nextDate.setDate(nextDate.getDate() + 14); break;
+                case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+                case 'yearly': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+                default: nextDate.setMonth(nextDate.getMonth() + 1);
+            }
+            nextPaymentDate = nextDate.toISOString();
+        }
+
+        // 2. Construir el objeto transacción completo
         const cleanData = {
-            ...formData,
-            amount: amountVal,
+            type: formData.type,
+            amount: parseFloat(formData.amount),
+            category: formData.category,
             // TIMEZONE FIX: Force 12:00 PM to prevent day shift on UTC conversion
             date: new Date(formData.date + "T12:00:00").toISOString(),
-            // Only include recurrence fields if isRecurring is true
+            description: formData.description,
+            account: formData.account,
+            isRecurring: formData.isRecurring,
             frequency: formData.isRecurring ? formData.frequency : undefined,
+            // ¡ESTA ES LA CLAVE QUE FALTABA!
+            nextPaymentDate: nextPaymentDate,
             subscriptionName: formData.isRecurring ? (formData.subscriptionName || formData.description) : undefined,
-            nextPaymentDate: formData.isRecurring ? new Date(formData.date + "T12:00:00").toISOString() : undefined // Also fix nextPaymentDate
+            // Legacy/Optional fields handling if needed, though cleanData struct seems slightly different in my view vs user snippet.
+            // User snippet used "addTransaction(newTransaction)" directly but here we use "cleanData" then context calls.
+            // Keeping consistency with local file structure but using user's logic.
         };
 
         if (editingTransaction) {
