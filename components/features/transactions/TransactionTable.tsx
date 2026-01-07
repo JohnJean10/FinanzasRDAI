@@ -76,7 +76,9 @@ export function TransactionTable({ onEdit, data }: TransactionTableProps) {
                                         {t.category.replace('_', ' ')}
                                     </span>
                                 </td>
-                                {new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00').toLocaleDateString()}
+                                <td className="p-4 text-slate-500 dark:text-slate-400 text-xs">
+                                    {t.date ? new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00').toLocaleDateString() : 'N/A'}
+                                </td>
                                 <td className={`p-4 text-right font-bold font-mono ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
                                     {t.type === 'expense' && '-'} {formatCurrency(t.amount)}
                                 </td>
