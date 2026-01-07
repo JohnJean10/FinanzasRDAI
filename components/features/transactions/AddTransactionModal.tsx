@@ -77,10 +77,12 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
         const cleanData = {
             ...formData,
             amount: amountVal,
+            // TIMEZONE FIX: Force 12:00 PM to prevent day shift on UTC conversion
+            date: new Date(formData.date + "T12:00:00").toISOString(),
             // Only include recurrence fields if isRecurring is true
             frequency: formData.isRecurring ? formData.frequency : undefined,
             subscriptionName: formData.isRecurring ? (formData.subscriptionName || formData.description) : undefined,
-            nextPaymentDate: formData.isRecurring ? formData.date : undefined
+            nextPaymentDate: formData.isRecurring ? new Date(formData.date + "T12:00:00").toISOString() : undefined // Also fix nextPaymentDate
         };
 
         if (editingTransaction) {
