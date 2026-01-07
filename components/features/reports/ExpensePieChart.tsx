@@ -1,20 +1,18 @@
 "use client";
 
-import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Transaction } from "@/lib/types";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'];
 
-export function ExpensePieChart() {
-    const { transactions } = useFinancial();
+interface ExpensePieChartProps {
+    filteredTransactions: Transaction[];
+}
 
-    // 1. Filter expenses and group by category
-    const currentMonth = new Date().getMonth();
-    const expenses = transactions.filter(t =>
-        t.type === 'expense' &&
-        new Date(t.date).getMonth() === currentMonth
-    );
+export function ExpensePieChart({ filteredTransactions }: ExpensePieChartProps) {
+    // 1. Filter expenses
+    const expenses = filteredTransactions.filter(t => t.type === 'expense');
 
     const dataMap = expenses.reduce((acc, t) => {
         acc[t.category] = (acc[t.category] || 0) + t.amount;

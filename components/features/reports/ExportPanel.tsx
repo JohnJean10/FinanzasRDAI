@@ -1,120 +1,150 @@
-"use client";
-
 import { useFinancial } from "@/lib/context/financial-context";
 import { FileDown, FileSpreadsheet } from "lucide-react";
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { calculateCashFlowPrediction, detectRecurringTransactions } from "@/lib/utils";
+import { Transaction } from "@/lib/types";
 
-export function ExportPanel() {
-    const { transactions } = useFinancial();
+interface ExportPanelProps {
+    data?: Transaction[];
+}
+
+export function ExportPanel({ data }: ExportPanelProps) {
+    const { transactions: allTransactions } = useFinancial();
+    // Use filtered data if provided, otherwise use all
+    const transactions = data || allTransactions;
 
     const handleExportExcel = async () => {
-        // 1. Inicializar Libro y Hoja
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Transacciones FinanzasRD');
+        workbook.creator = 'FinanzasRD AI';
+        workbook.created = new Date();
 
-        // 2. Definir Columnas y Anchos
-        worksheet.columns = [
+        // --- HOJA 1: RESUMEN Y CATEGORÍAS ---
+        const sheetSummary = workbook.addWorksheet('Resumen General');
+
+        // Totales
+        const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        const balance = totalIncome - totalExpense;
+
+        sheetSummary.columns = [{ width: 20 }, { width: 20 }, { width: 5 }, { width: 25 }, { width: 20 }];
+
+        // Header Stats
+        sheetSummary.addRow(["REPORTE FINANCIERO", new Date().toLocaleDateString()]);
+        sheetSummary.addRow([""]);
+        sheetSummary.addRow(["BALANCE NETO", balance]);
+        sheetSummary.addRow(["TOTAL INGRESOS", totalIncome]);
+        sheetSummary.addRow(["TOTAL GASTOS", totalExpense]);
+
+        // Style Stats
+        ['C2', 'C4', 'C5', 'C6'].forEach(cell => {
+            const c = sheetSummary.getCell(cell.replace('C', 'B'));
+            c.numFmt = '"RD$"#,##0.00';
+            c.font = { bold: true };
+        });
+
+        sheetSummary.getRow(1).font = { bold: true, size: 14 };
+        sheetSummary.addRow([""]);
+        sheetSummary.addRow([""]);
+
+        // Breakdown by Category
+        sheetSummary.addRow(["DISTRIBUCIÓN DE GASTOS"]);
+        sheetSummary.getRow(8).font = { bold: true, color: { argb: 'FF3B82F6' } };
+
+        sheetSummary.addRow(["Categoría", "Monto", "% del Total"]);
+        const headerCat = sheetSummary.getRow(9);
+        headerCat.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerCat.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+
+        const expenses = transactions.filter(t => t.type === 'expense');
+        const expensesByCat = expenses.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {} as Record<string, number>);
+
+        Object.entries(expensesByCat)
+            .sort(([, a], [, b]) => b - a)
+            .forEach(([cat, amount]) => {
+                sheetSummary.addRow([
+                    cat.replace('_', ' ').toUpperCase(),
+                    amount,
+                    totalExpense > 0 ? amount / totalExpense : 0
+                ]);
+            });
+
+        sheetSummary.getColumn(2).numFmt = '"RD$"#,##0.00';
+        sheetSummary.getColumn(3).numFmt = '0.0%';
+
+
+        // --- HOJA 2: PROYECCIÓN DE FLUJO ---
+        const sheetFore = workbook.addWorksheet('Proyección de Flujo');
+        sheetFore.columns = [{ width: 25 }, { width: 15 }, { width: 15 }, { width: 15 }];
+
+        // Data Prep
+        const patterns = detectRecurringTransactions(transactions);
+        // Rough calc of current balance for projection base (simplified)
+        const projectionWeeks = calculateCashFlowPrediction(balance, patterns);
+
+        sheetFore.addRow(["SEMANA", "BALANCE", "INGRESOS", "GASTOS"]);
+        const headFore = sheetFore.getRow(1);
+        headFore.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headFore.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } }; // Indigo
+
+        projectionWeeks.forEach(w => {
+            sheetFore.addRow([w.range, w.balance, w.income, w.expenses]);
+        });
+        sheetFore.getColumn(2).numFmt = '"RD$"#,##0.00';
+        sheetFore.getColumn(3).numFmt = '"RD$"#,##0.00';
+        sheetFore.getColumn(4).numFmt = '"RD$"#,##0.00';
+
+
+        // --- HOJA 3: SUSCRIPCIONES ---
+        const sheetSubs = workbook.addWorksheet('Suscripciones Detectadas');
+        sheetSubs.columns = [{ width: 25 }, { width: 15 }, { width: 15 }, { width: 20 }];
+
+        sheetSubs.addRow(["SERVICIO", "COSTO", "FRECUENCIA", "CATEGORÍA"]);
+        const headSubs = sheetSubs.getRow(1);
+        headSubs.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headSubs.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' } }; // Emerald
+
+        patterns.forEach(p => {
+            sheetSubs.addRow([p.description, p.amount, p.frequency, p.category]);
+        });
+        sheetSubs.getColumn(2).numFmt = '"RD$"#,##0.00';
+
+
+        // --- HOJA 4: TRANSACCIONES (Detalle) ---
+        const sheetTx = workbook.addWorksheet('Detalle de Transacciones');
+        sheetTx.columns = [
             { header: 'Fecha', key: 'date', width: 15 },
             { header: 'Tipo', key: 'type', width: 12 },
             { header: 'Categoría', key: 'category', width: 25 },
             { header: 'Descripción', key: 'description', width: 40 },
-            { header: 'Cuenta', key: 'account', width: 15 },
-            { header: 'Monto (DOP)', key: 'amount', width: 18 },
+            { header: 'Monto', key: 'amount', width: 18 },
         ];
 
-        // 3. Estilizar Encabezado (Match con bg-slate-900 y border-primary)
-        const headerRow = worksheet.getRow(1);
-        headerRow.height = 32;
+        const headTx = sheetTx.getRow(1);
+        headTx.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headTx.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF64748B' } }; // Slate
 
-        headerRow.eachCell((cell) => {
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FF0F172A' } // Slate 900
-            };
-            cell.font = {
-                name: 'Segoe UI',
-                color: { argb: 'FFFFFFFF' }, // White
-                bold: true,
-                size: 11
-            };
-            cell.alignment = { vertical: 'middle', horizontal: 'center' };
-            cell.border = {
-                bottom: { style: 'medium', color: { argb: 'FF3B82F6' } } // Primary Blue
-            };
-        });
-
-        // 4. Inyectar Datos con Formato Condicional
-        transactions.forEach((t) => {
-            const row = worksheet.addRow({
+        transactions.forEach(t => {
+            const row = sheetTx.addRow({
                 date: new Date(t.date).toLocaleDateString('es-DO'),
                 type: t.type === 'income' ? 'Ingreso' : 'Gasto',
                 category: t.category,
                 description: t.description,
-                account: t.account,
                 amount: t.amount
             });
-
-            // Celda de Monto (Columna F / Index 6)
-            const amountCell = row.getCell(6);
-            amountCell.numFmt = '"RD$"#,##0.00;[Red]-"RD$"#,##0.00';
-
-            // Colores basados en tailwind.config.ts
-            if (t.type === 'income') {
-                amountCell.font = { color: { argb: 'FF10B981' } }; // Success (Emerald 500)
-            } else {
-                amountCell.font = { color: { argb: 'FFEF4444' } }; // Danger (Red 500)
-            }
-
-            // Alineación general
-            row.eachCell((cell, colNumber) => {
-                cell.alignment = { vertical: 'middle', horizontal: colNumber === 6 ? 'right' : 'left' };
-                // Bordes suaves
-                cell.border = {
-                    bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } // Slate 200
-                };
-            });
+            const amtColor = t.type === 'income' ? 'FF10B981' : 'FFEF4444';
+            row.getCell(5).font = { color: { argb: amtColor } };
         });
+        sheetTx.getColumn(5).numFmt = '"RD$"#,##0.00';
 
-        // 5. Calcular y Agregar Totales
-        const totalIncome = transactions
-            .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
 
-        const totalExpense = transactions
-            .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        const balance = totalIncome - totalExpense;
-
-        // Fila vacía
-        worksheet.addRow([]);
-
-        // Fila de Resumen
-        const summaryRow = worksheet.addRow(['', '', '', '', 'BALANCE NETO:', balance]);
-        summaryRow.height = 28;
-
-        // Estilo de la celda de etiqueta "BALANCE NETO"
-        const labelCell = summaryRow.getCell(5);
-        labelCell.font = { bold: true, size: 11 };
-        labelCell.alignment = { horizontal: 'right', vertical: 'middle' };
-
-        // Estilo de la celda del valor final
-        const totalCell = summaryRow.getCell(6);
-        totalCell.numFmt = '"RD$"#,##0.00';
-        totalCell.font = { bold: true, size: 12, color: { argb: balance >= 0 ? 'FF10B981' : 'FFEF4444' } };
-        totalCell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFF1F5F9' } // Slate 100
-        };
-        totalCell.alignment = { horizontal: 'right', vertical: 'middle' };
-
-        // 6. Generar Blob y Descargar
+        // Generar y Descargar
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        saveAs(blob, `FinanzasRD_Reporte_${new Date().toISOString().split('T')[0]}.xlsx`);
+        saveAs(blob, `FinanzasRD_Reporte_Completo_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     return (
@@ -134,14 +164,7 @@ export function ExportPanel() {
                     className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all font-medium text-sm shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40 transform hover:-translate-y-0.5"
                 >
                     <FileSpreadsheet size={18} />
-                    Descargar Excel (.xlsx)
-                </button>
-                <button
-                    disabled
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white/5 text-white/30 rounded-lg font-medium text-sm cursor-not-allowed border border-white/5"
-                >
-                    <FileDown size={18} />
-                    PDF (Próximamente)
+                    Exportar Excel Completo
                 </button>
             </div>
         </div>

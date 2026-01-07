@@ -9,8 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, detectRecurringTransactions } from "@/lib/utils"
 import { PlayCircle, PauseCircle, XCircle } from "lucide-react"
 
-export function SubscriptionAnalysis() {
-    const { transactions, user } = useFinancial()
+interface SubscriptionAnalysisProps {
+    transactions: any[];
+}
+
+export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps) {
+    const { user } = useFinancial()
 
     // 1. Detect recurring expenses (explicit + inferred)
     const subscriptions = useMemo(() => {

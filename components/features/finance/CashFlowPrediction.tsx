@@ -8,8 +8,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Calendar, DollarSign, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react"
 import { formatCurrency, detectRecurringTransactions, calculateCashFlowPrediction } from "@/lib/utils"
 
-export function CashFlowPrediction() {
-    const { transactions } = useFinancial()
+interface CashFlowPredictionProps {
+    transactions: any[];
+}
+
+export function CashFlowPrediction({ transactions }: CashFlowPredictionProps) {
 
     // 1. Detect recurring patterns
     const patterns = useMemo(() => detectRecurringTransactions(transactions), [transactions])

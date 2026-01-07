@@ -3,8 +3,6 @@ import { TrendChart } from "@/components/features/dashboard/TrendChart";
 import { InsightWidget } from "@/components/features/dashboard/InsightWidget";
 import { BudgetAlerts } from "@/components/features/dashboard/BudgetAlerts";
 import { RecentTransactions } from "@/components/features/dashboard/RecentTransactions";
-import { CashFlowPrediction } from "@/components/features/finance/CashFlowPrediction";
-import { SubscriptionAnalysis } from "@/components/features/finance/SubscriptionAnalysis";
 
 export default function DashboardPage() {
     return (
@@ -29,16 +27,6 @@ export default function DashboardPage() {
                 {/* Charts Section */}
                 <div className="lg:col-span-2 space-y-8">
                     <TrendChart />
-
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Predicción de Flujo</h2>
-                        <CashFlowPrediction />
-                    </div>
-
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Análisis de Suscripciones</h2>
-                        <SubscriptionAnalysis />
-                    </div>
                 </div>
 
                 {/* Sidebar/Widgets Section */}

@@ -8,14 +8,15 @@ import { Transaction } from "@/lib/types";
 
 interface TransactionTableProps {
     onEdit: (t: Transaction) => void;
+    data: Transaction[];
 }
 
-export function TransactionTable({ onEdit }: TransactionTableProps) {
-    const { transactions, deleteTransaction } = useFinancial();
+export function TransactionTable({ onEdit, data }: TransactionTableProps) {
+    const { deleteTransaction } = useFinancial();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
 
-    const filtered = transactions.filter(t => {
+    const filtered = data.filter(t => {
         const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = filterType === 'all' || t.type === filterType;
         return matchesSearch && matchesType;
