@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency, detectRecurringTransactions } from "@/lib/utils"
 import { PlayCircle, PauseCircle, XCircle } from "lucide-react"
+// 1. IMPORTAR LA INTERFAZ CORRECTA
+import { Transaction } from "@/lib/types/index"
 
 interface SubscriptionAnalysisProps {
-    transactions: any[];
+    // 2. USAR EL TIPO ESTRICTO EN LUGAR DE any[]
+    transactions: Transaction[];
 }
 
 export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps) {
@@ -28,8 +31,9 @@ export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps
                     acc[key] = t;
                 }
                 return acc;
-            }, {} as Record<string, typeof transactions[0]>)
+            }, {} as Record<string, Transaction>) // 3. TIPAR EL ACUMULADOR CORRECTAMENTE
 
+        // Al tener el Record tipado arriba, aquí 't' ya se reconoce como Transaction automáticamente
         const explicitList = Object.values(explicit).map((t, idx) => ({
             id: `explicit-${t.id}`,
             name: t.subscriptionName || t.description,
