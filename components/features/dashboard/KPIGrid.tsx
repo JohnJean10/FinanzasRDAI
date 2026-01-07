@@ -1,90 +1,100 @@
-"use client";
+"use client"
 
-import { useFinancial } from "@/lib/context/financial-context";
-import { formatCurrency } from "@/lib/utils";
-import { TrendingUp, TrendingDown, DollarSign, PiggyBank, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useFinancial } from "@/lib/context/financial-context"
+import { formatCurrency } from "@/lib/utils"
+import { ArrowDownIcon, ArrowUpIcon, DollarSign, Wallet, PiggyBank, Percent } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 
 export function KPIGrid() {
-    const { metrics } = useFinancial();
+    const { metrics } = useFinancial()
 
-    // Mapping context metrics to UI
-    const { balance, totalIncome, totalExpenses, savingsRate } = metrics;
-
-    // For now, we disable the trend comparison as the advanced context only calculates the selected period.
-    // Future improvement: Calculate previous period metrics in context.
-    const incomeChange = "-";
-    const expenseChange = "-";
-    const balanceChange = "-";
-    const savingsChange = "-";
-
-    const kpis = [
-        {
-            title: "Balance Histórico", // Renamed for clarity as per context logic
-            value: formatCurrency(balance),
-            icon: DollarSign,
-            color: "blue",
-            change: balanceChange,
-            trend: "neutral", // No trend for now
-            sentiment: "neutral"
-        },
-        {
-            title: "Ingresos",
-            value: formatCurrency(totalIncome),
-            icon: TrendingUp,
-            color: "emerald",
-            change: incomeChange,
-            trend: "neutral",
-            sentiment: "neutral"
-        },
-        {
-            title: "Gastos",
-            value: formatCurrency(totalExpenses),
-            icon: TrendingDown,
-            color: "red",
-            change: expenseChange,
-            trend: "neutral",
-            sentiment: "neutral"
-        },
-        {
-            title: "Tasa de Ahorro",
-            value: `${savingsRate.toFixed(1)}%`,
-            icon: PiggyBank,
-            color: "purple",
-            change: savingsChange,
-            trend: "neutral",
-            sentiment: "neutral"
-        }
-    ];
+    // Cálculo del porcentaje de progreso global de ahorros
+    const savingsProgress = metrics.totalGoalsTarget > 0
+        ? (metrics.totalSavings / metrics.totalGoalsTarget) * 100
+        : 0;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {kpis.map((kpi, idx) => (
-                <div
-                    key={idx}
-                    className="bg-white dark:bg-[#1e1b4b] p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-100 dark:border-slate-800 group"
-                >
-                    <div className="flex justify-between items-start mb-4">
-                        <div className={`p-3 rounded-xl bg-${kpi.color}-50 dark:bg-${kpi.color}-900/20 text-${kpi.color}-600 dark:text-${kpi.color}-400 group-hover:scale-110 transition-transform duration-300`}>
-                            <kpi.icon size={24} />
-                        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 
-                        <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${kpi.sentiment === 'positive'
-                            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                            }`}>
-                            {kpi.trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                            <span>{kpi.change}</span>
-                        </div>
+            {/* 1. DISPONIBLE PARA USAR (La métrica reina) */}
+            <Card className="border-l-4 border-l-emerald-500 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Disponible para usar
+                    </CardTitle>
+                    <Wallet className="h-4 w-4 text-emerald-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(metrics.availableBalance)}
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Libre de compromisos y ahorros
+                    </p>
+                </CardContent>
+            </Card>
 
-                    <div>
-                        <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{kpi.title}</h3>
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                            {kpi.value}
+            {/* 2. BALANCE TOTAL (Bancario) */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Balance Total (Bancos)
+                    </CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">
+                        {formatCurrency(metrics.balance)}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* 3. AHORROS (Progreso Global) */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Ahorros Acumulados
+                    </CardTitle>
+                    <PiggyBank className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold mb-2">
+                        {formatCurrency(metrics.totalSavings)}
+                    </div>
+                    {/* Barra de Progreso */}
+                    <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-semibold">
+                            <span>Progreso Global</span>
+                            <span>{savingsProgress.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={savingsProgress} className="h-2" />
+                        <p className="text-xs text-muted-foreground text-right pt-1">
+                            Meta: {formatCurrency(metrics.totalGoalsTarget)}
                         </p>
                     </div>
-                </div>
-            ))}
+                </CardContent>
+            </Card>
+
+            {/* 4. RELACIÓN INGRESOS-GASTOS (Antes % Ahorro) */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Relación Ingresos-Gastos
+                    </CardTitle>
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className={`text-2xl font-bold ${metrics.savingsRate >= 20 ? 'text-green-600' : metrics.savingsRate > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                        {metrics.savingsRate.toFixed(1)}%
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {metrics.savingsRate >= 0
+                            ? "Del ingreso retenido este periodo"
+                            : "Estás gastando más de lo que ingresas"}
+                    </p>
+                </CardContent>
+            </Card>
         </div>
-    );
+    )
 }

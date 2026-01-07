@@ -47,9 +47,12 @@ interface FinancialContextType extends AppData {
     metrics: {
         totalIncome: number;
         totalExpenses: number;
-        balance: number;
-        savingsRate: number;
+        balance: number;          // Balance Total (Bancario)
+        availableBalance: number; // NUEVO: Balance - Ahorros (Lo que puedes gastar)
+        savingsRate: number;      // Tasa de ahorro del mes (Relación I-G)
         monthlyBurnRate: number;
+        totalSavings: number;     // NUEVO: Suma de lo ahorrado en metas
+        totalGoalsTarget: number; // NUEVO: Suma de los objetivos de metas
     };
 }
 
@@ -81,7 +84,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
     // --- CÁLCULO DE MÉTRICAS CON SEGMENTACIÓN TEMPORAL AVANZADA ---
     const metrics = useMemo(() => {
-        const { transactions } = data; // Destructure transactions from data
+        const { transactions, goals } = data; // Destructure transactions AND goals from data
         const now = new Date();
         let startDate = new Date();
         let endDate = new Date();
@@ -132,7 +135,16 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             return acc;
         }, 0);
 
-        // 2. "La Película" (Flujo): Ingresos/Gastos DENTRO del rango seleccionado
+        // 2. NUEVO: Calcular Ahorros Acumulados (Suma de todas las Metas)
+        // Nota: Asumimos que 'goals' contiene el estado actual de las metas
+        const totalSavings = goals.reduce((acc, goal) => acc + goal.current, 0);
+        const totalGoalsTarget = goals.reduce((acc, goal) => acc + goal.target, 0);
+
+        // 3. NUEVO: Calcular Disponible Real (Contabilidad Mental)
+        // Disponible = Lo que hay en el banco - Lo que ya tiene nombre (Metas)
+        const availableBalance = historicalBalance - totalSavings;
+
+        // 4. "La Película" (Flujo): Ingresos/Gastos DENTRO del rango seleccionado
         const periodMetrics = transactions.reduce(
             (acc, t) => {
                 // Aplicamos tu lógica de "Rollover" (Día 31 -> Mes siguiente)
@@ -155,11 +167,14 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             totalIncome: periodMetrics.income,
             totalExpenses: periodMetrics.expense,
             balance: historicalBalance,
+            availableBalance,
+            totalSavings,
+            totalGoalsTarget,
             savingsRate,
             monthlyBurnRate: periodMetrics.expense
         };
 
-    }, [data.transactions, timeRange]);
+    }, [data.transactions, data.goals, timeRange]);
 
     // --- EMERGENCY FUND AUTO-SYNC ---
     useEffect(() => {
