@@ -28,7 +28,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
         description: "",
         category: "alimentacion",
         date: new Date().toISOString().split('T')[0],
-        type: "expense" as "income" | "expense" | "saving", // Updated type
+        type: "expense" as "income" | "expense" | "saving",
         account: "general",
         isRecurring: false,
         frequency: "monthly" as "daily" | "weekly" | "biweekly" | "monthly" | "yearly",
@@ -73,6 +73,13 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
+        // VALIDATION: For savings, Goal is mandatory
+        if (formData.type === 'saving' && !formData.goalId) {
+            // Simple alert for MVP, could be UI error state
+            alert("Por favor selecciona una Meta de Ahorro para destinar el dinero.");
+            return;
+        }
+
         let nextPaymentDate = undefined;
         if (formData.isRecurring && formData.date) {
             const dateObj = new Date(formData.date + "T12:00:00");
@@ -89,17 +96,25 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
             nextPaymentDate = nextDate.toISOString();
         }
 
+        // Auto-generate description for Savings if hidden
+        let finalDescription = formData.description;
+        if (formData.type === 'saving') {
+            const selectedGoal = goals.find(g => g.id === formData.goalId);
+            finalDescription = selectedGoal ? `Ahorro: ${selectedGoal.name}` : "Ahorro General";
+        }
+
         const cleanData = {
             type: formData.type,
             amount: parseFloat(formData.amount),
-            category: formData.type === 'saving' ? 'ahorros' : formData.category, // Auto-categorize savings
+            category: formData.type === 'saving' ? 'ahorros' : formData.category,
             date: new Date(formData.date + "T12:00:00").toISOString(),
-            description: formData.description,
+            description: finalDescription,
             account: formData.account,
             isRecurring: formData.isRecurring,
             frequency: formData.isRecurring ? formData.frequency : undefined,
             nextPaymentDate: nextPaymentDate,
-            subscriptionName: formData.isRecurring ? (formData.subscriptionName || formData.description) : undefined,
+            // For saving, subscriptionName is not needed/hidden, so we can ignore it or set to simplified desc
+            subscriptionName: formData.isRecurring ? (formData.type === 'saving' ? finalDescription : (formData.subscriptionName || formData.description)) : undefined,
             goalId: formData.type === 'saving' ? Number(formData.goalId) : undefined
         };
 
@@ -128,7 +143,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
 
-                    {/* Type Toggle - Now with Saving */}
+                    {/* Type Toggle */}
                     <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl">
                         <button
                             type="button"
@@ -175,13 +190,14 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                     {/* Link to Goal (Only for Savings) */}
                     {formData.type === 'saving' && (
                         <div className="animate-in fade-in slide-in-from-top-2">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Destinar a Meta (Opcional)</label>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 mb-1">Destinar a Meta (Obligatorio)</label>
                             <select
+                                required
                                 value={formData.goalId || ""}
                                 onChange={e => setFormData({ ...formData, goalId: Number(e.target.value) })}
                                 className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl outline-none text-sm font-medium text-slate-900 dark:text-white appearance-none"
                             >
-                                <option value="">Sin meta específica (Ahorro General)</option>
+                                <option value="">Selecciona una meta...</option>
                                 {goals.map(goal => (
                                     <option key={goal.id} value={goal.id}>
                                         {goal.icon} {goal.name} (Faltan RD${(goal.target - goal.current).toLocaleString()})
@@ -191,18 +207,19 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                         </div>
                     )}
 
-                    {/* Description */}
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Descripción</label>
-                        <input
-                            type="text"
-                            required
-                            value={formData.description}
-                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-white font-medium"
-                            placeholder={formData.type === 'income' ? "Ej. Nómina Enero" : formData.type === 'saving' ? "Ej. Aporte Mensual" : "Ej. Supermercado"}
-                        />
-                    </div>
+                    {/* Description - HIDDEN for Savings */}
+                    {formData.type !== 'saving' && (
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Descripción</label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-white font-medium"
+                            />
+                        </div>
+                    )}
 
                     {/* Category & Date Row */}
                     <div className="grid grid-cols-2 gap-4">
@@ -243,7 +260,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                         </div>
                     </div>
 
-                    {/* Recurrence Switch - Always show */}
+                    {/* Recurrence Switch */}
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -280,16 +297,19 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                                         <option value="yearly">Anual</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nombre Servicio</label>
-                                    <input
-                                        type="text"
-                                        placeholder={formData.type === 'saving' ? "Ej. Ahorro Coche" : "Ej. Netflix"}
-                                        value={formData.subscriptionName}
-                                        onChange={e => setFormData({ ...formData, subscriptionName: e.target.value })}
-                                        className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
-                                    />
-                                </div>
+                                {/* Hide Subscription Name for Savings */}
+                                {formData.type !== 'saving' && (
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nombre Servicio</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ej. Netflix"
+                                            value={formData.subscriptionName}
+                                            onChange={e => setFormData({ ...formData, subscriptionName: e.target.value })}
+                                            className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
