@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency, detectRecurringTransactions } from "@/lib/utils"
 import { PlayCircle, PauseCircle, XCircle } from "lucide-react"
-// 1. IMPORTAR LA INTERFAZ CORRECTA
+// Importamos la interfaz Transaction existente
 import { Transaction } from "@/lib/types/index"
 
 interface SubscriptionAnalysisProps {
-    // 2. USAR EL TIPO ESTRICTO EN LUGAR DE any[]
+    // Usamos el tipo correcto en lugar de any[]
     transactions: Transaction[];
 }
 
@@ -31,10 +31,10 @@ export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps
                     acc[key] = t;
                 }
                 return acc;
-            }, {} as Record<string, Transaction>) // 3. TIPAR EL ACUMULADOR CORRECTAMENTE
+            }, {} as Record<string, Transaction>) // Tipado explícito del acumulador
 
-        // Al tener el Record tipado arriba, aquí 't' ya se reconoce como Transaction automáticamente
-        const explicitList = Object.values(explicit).map((t, idx) => ({
+        // Forzamos el tipado en el map para evitar errores "unknown"
+        const explicitList = Object.values(explicit).map((t: Transaction) => ({
             id: `explicit-${t.id}`,
             name: t.subscriptionName || t.description,
             cost: t.amount,
@@ -59,10 +59,11 @@ export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps
             }))
 
         // Combine and deduplicate by name (Explicit takes precedence)
-        const combined = [...explicitList];
+        // Usamos any temporalmente aquí para facilitar la mezcla de listas
+        const combined: any[] = [...explicitList];
         inferred.forEach(inf => {
             if (!combined.find(e => e.name.toLowerCase() === inf.name.toLowerCase())) {
-                combined.push(inf as any);
+                combined.push(inf);
             }
         });
 
@@ -70,19 +71,18 @@ export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps
     }, [transactions])
 
     const getVerdict = (sub: any) => {
-        // High level logic: if it's a known service or has high "simulated" usage
         if (sub.usage === 0) return { label: 'CANCELAR', color: 'bg-red-500', icon: XCircle }
         if (sub.usage < 2) return { label: 'EVALUAR', color: 'bg-amber-500', icon: PauseCircle }
         return { label: 'MANTENER', color: 'bg-emerald-500', icon: PlayCircle }
     }
 
     const potentialSavings = subscriptions
-        .filter(s => s.usage < 2 && s.status === 'active')
-        .reduce((sum, s) => sum + s.cost, 0)
+        .filter((s: any) => s.usage < 2 && s.status === 'active')
+        .reduce((sum: number, s: any) => sum + s.cost, 0)
 
     const totalCost = subscriptions
-        .filter(s => s.status === 'active')
-        .reduce((sum, s) => sum + s.cost, 0)
+        .filter((s: any) => s.status === 'active')
+        .reduce((sum: number, s: any) => sum + s.cost, 0)
 
     const monthlyIncome = user.monthlyIncome || 50000
 
@@ -108,9 +108,9 @@ export function SubscriptionAnalysis({ transactions }: SubscriptionAnalysisProps
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {subscriptions.map((sub) => {
+                                {subscriptions.map((sub: any) => {
                                     const verdict = getVerdict(sub)
-                                    const Icon = verdict.icon
+                                    // const Icon = verdict.icon // Icon no usado visualmente en la tabla por ahora
                                     return (
                                         <TableRow key={sub.id} className={sub.status !== 'active' ? 'opacity-50' : ''}>
                                             <TableCell className="font-medium">
