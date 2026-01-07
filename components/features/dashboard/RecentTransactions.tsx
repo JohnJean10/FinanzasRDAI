@@ -39,11 +39,7 @@ export function RecentTransactions() {
                                     {t.description || t.category}
                                 </p>
                                 <p className="text-xs text-slate-400">
-                                    {/* Use simplistic relative time if date-fns fails or for MVP simplicity, 
-                                        but trying standard approach first. Falls back to Date string if needed manually.
-                                        Since I can't verify packages easily, I will strip date-fns to be safe and use native Intl API.
-                                    */}
-                                    {new Date(t.date).toLocaleDateString('es-DO')}
+                                    {new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00').toLocaleDateString('es-DO')}
                                 </p>
                             </div>
                         </div>
