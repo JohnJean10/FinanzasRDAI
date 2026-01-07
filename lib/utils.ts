@@ -168,19 +168,39 @@ export const processRecurringTransactions = (transactions: Transaction[]): { new
 
                 // Bucle para ponerse al día (por si pasaron 3 meses sin abrir la app)
                 while (nextDate <= today) {
-                    const newTrans: Transaction = {
-                        ...t,
-                        id: Date.now() + Math.floor(Math.random() * 10000), // Numeric ID compatible
-                        date: nextDate.toISOString(),
-                        isRecurring: false, // La hija NO es recurrente, es un pago único
-                        nextPaymentDate: undefined,
-                        description: `${t.description} (Auto)`
-                    };
+                    const nextDateISO = nextDate.toISOString();
+                    const expectedDescription = `${t.description} (Auto)`;
 
-                    newTransactions.push(newTrans);
-                    console.log(`   -> Generada transacción para: ${newTrans.date.split('T')[0]}`);
+                    // IDEMPOTENCY CHECK: Comprueba si YA existe una transacción generada para la misma fecha y descripción
+                    // Revisamos tanto las transacciones existentes como las que acabamos de generar en este bucle
+                    const alreadyExists = transactions.some(existing =>
+                        existing.description === expectedDescription &&
+                        Math.abs(existing.amount - t.amount) < 0.01 &&
+                        existing.date.split('T')[0] === nextDateISO.split('T')[0]
+                    ) || newTransactions.some(newTx =>
+                        newTx.description === expectedDescription &&
+                        Math.abs(newTx.amount - t.amount) < 0.01 &&
+                        newTx.date.split('T')[0] === nextDateISO.split('T')[0]
+                    );
+
+                    if (!alreadyExists) {
+                        const newTrans: Transaction = {
+                            ...t,
+                            id: Date.now() + Math.floor(Math.random() * 10000), // Numeric ID compatible
+                            date: nextDateISO,
+                            isRecurring: false, // La hija NO es recurrente, es un pago único
+                            nextPaymentDate: undefined,
+                            description: expectedDescription
+                        };
+
+                        newTransactions.push(newTrans);
+                        console.log(`   -> Generada transacción para: ${newTrans.date.split('T')[0]}`);
+                    } else {
+                        console.log(`   ⚠️ Saltando duplicado para: ${nextDateISO.split('T')[0]}`);
+                    }
 
                     // Calcular la SIGUIENTE fecha
+                    // IMPORTANTE: Avanzamos la fecha SIEMPRE, incluso si saltamos la creación, para salir del bucle
                     switch (t.frequency) {
                         case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
                         case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
@@ -191,7 +211,7 @@ export const processRecurringTransactions = (transactions: Transaction[]): { new
                     }
                 }
 
-                // Actualizamos la transacción MADRE con la nueva fecha futura
+                // Actualizamos la transacción MADRE con la nueva fecha futura definitiva
                 t.nextPaymentDate = nextDate.toISOString();
                 console.log(`   -> Próximo cobro actualizado a: ${t.nextPaymentDate.split('T')[0]}`);
             }
