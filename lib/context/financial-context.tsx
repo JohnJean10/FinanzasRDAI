@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { AppData, Transaction, Goal, Debt, BudgetConfig, TimeRange } from '../types';
 import { NotificationService, Notification } from '../services/notifications';
-import { getBudgetMonthDate } from '../utils';
+import { getBudgetMonthDate, processRecurringTransactions } from '../utils';
 
 // Initial Mock Data
 const INITIAL_DATA: AppData = {
@@ -203,6 +203,29 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             });
         }
     }, [data.budgetConfigs, data.user.monthsOfPeace]);
+
+    // --- AUTOMATIC RECURRING TRANSACTIONS ENGINE ---
+    useEffect(() => {
+        // Only run if we have data to avoid initial empty check issues or conflicts
+        if (data.transactions.length > 0) {
+            const { newTransactions, updatedBaseTransactions } = processRecurringTransactions(data.transactions);
+
+            if (newTransactions.length > 0 || updatedBaseTransactions.length > 0) {
+                console.log("🔄 Motor de Recurrencia: Actualizando transacciones...");
+
+                setData(prev => ({
+                    ...prev,
+                    transactions: [...newTransactions, ...updatedBaseTransactions].sort((a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                    )
+                }));
+
+                // Optional: Notify user about new auto-recs (Toast)
+                // We'll skip this for now to avoid spam/loop issues until proven stable, 
+                // but the console logs in utils will show activity.
+            }
+        }
+    }, [data.transactions]);
 
     const addNotification = (n: Notification) => {
         setData(prev => ({ ...prev, notifications: [n, ...prev.notifications] }));
