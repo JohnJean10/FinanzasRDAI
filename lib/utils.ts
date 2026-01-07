@@ -152,55 +152,67 @@ export function getBudgetMonthDate(dateStr: string, type: string) {
 export const processRecurringTransactions = (transactions: Transaction[]): { newTransactions: Transaction[], updatedBaseTransactions: Transaction[] } => {
     const today = new Date();
     const newTransactions: Transaction[] = [];
-    // Deep copy segura
     const updatedBase = JSON.parse(JSON.stringify(transactions));
     let hasChanges = false;
 
     updatedBase.forEach((t: Transaction) => {
-        // Validación estricta: Debe ser recurrente Y tener próxima fecha
         if (t.isRecurring && t.nextPaymentDate) {
             let nextDate = new Date(t.nextPaymentDate);
 
-            // Si la fecha próxima ya pasó o es hoy, ¡A TRABAJAR!
             if (nextDate <= today) {
                 console.log(`⚡ Procesando recurrencia para: ${t.description} (Tocaba: ${nextDate.toISOString().split('T')[0]})`);
                 hasChanges = true;
 
-                // Bucle para ponerse al día (por si pasaron 3 meses sin abrir la app)
                 while (nextDate <= today) {
                     const nextDateISO = nextDate.toISOString();
                     const expectedDescription = `${t.description} (Auto)`;
+                    const targetSubscriptionName = t.subscriptionName || t.description; // Fallback al nombre/descripción
 
-                    // IDEMPOTENCY CHECK: Comprueba si YA existe una transacción generada para la misma fecha y descripción
-                    // Revisamos tanto las transacciones existentes como las que acabamos de generar en este bucle
-                    const alreadyExists = transactions.some(existing =>
-                        existing.description === expectedDescription &&
-                        Math.abs(existing.amount - t.amount) < 0.01 &&
-                        existing.date.split('T')[0] === nextDateISO.split('T')[0]
-                    ) || newTransactions.some(newTx =>
-                        newTx.description === expectedDescription &&
-                        Math.abs(newTx.amount - t.amount) < 0.01 &&
-                        newTx.date.split('T')[0] === nextDateISO.split('T')[0]
-                    );
+                    // IDEMPOTENCY CHECK BASADO EN SERVICIO ("The Service Tracker"):
+                    // Si el usuario dijo que este gasto es "Netflix", verificamos si YA hay un gasto de "Netflix" en el periodo objetivo.
+                    const isDuplicate = (candidate: Transaction) => {
+                        // 1. Coincidencia de Nombre del Servicio (Más robusto que la descripción exacta)
+                        const candidateSubName = candidate.subscriptionName || candidate.description;
+                        if (candidateSubName !== targetSubscriptionName) return false;
+
+                        // 2. Coincidencia de Periodo
+                        const cDate = new Date(candidate.date);
+                        const nDate = new Date(nextDateISO);
+
+                        if (t.frequency === 'monthly') {
+                            // Mismo Mes y Año -> Es el mismo pago
+                            return cDate.getMonth() === nDate.getMonth() && cDate.getFullYear() === nDate.getFullYear();
+                        } else if (t.frequency === 'yearly') {
+                            // Mismo Año -> Es el mismo pago
+                            return cDate.getFullYear() === nDate.getFullYear();
+                        } else {
+                            // Para semanales/diarios: Ventana de 3 días para flexibilidad
+                            const diffTime = Math.abs(cDate.getTime() - nDate.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            return diffDays <= 3;
+                        }
+                    };
+
+                    const alreadyExists = transactions.some(isDuplicate) || newTransactions.some(isDuplicate);
 
                     if (!alreadyExists) {
                         const newTrans: Transaction = {
                             ...t,
-                            id: Date.now() + Math.floor(Math.random() * 10000), // Numeric ID compatible
+                            id: Date.now() + Math.floor(Math.random() * 100000), // Numeric ID compatible
                             date: nextDateISO,
-                            isRecurring: false, // La hija NO es recurrente, es un pago único
+                            isRecurring: false, // La hija NO es recurrente
                             nextPaymentDate: undefined,
-                            description: expectedDescription
+                            description: expectedDescription,
+                            subscriptionName: targetSubscriptionName // Aseguramos que la hija herede el nombre del servicio para futuras comprobaciones
                         };
 
                         newTransactions.push(newTrans);
-                        console.log(`   -> Generada transacción para: ${newTrans.date.split('T')[0]}`);
+                        console.log(`   -> Generada transacción para: ${newTrans.date.split('T')[0]} (${targetSubscriptionName})`);
                     } else {
-                        console.log(`   ⚠️ Saltando duplicado para: ${nextDateISO.split('T')[0]}`);
+                        console.log(`   ⚠️ Saltando duplicado (Service Match: ${targetSubscriptionName}) para: ${nextDateISO.split('T')[0]}`);
                     }
 
                     // Calcular la SIGUIENTE fecha
-                    // IMPORTANTE: Avanzamos la fecha SIEMPRE, incluso si saltamos la creación, para salir del bucle
                     switch (t.frequency) {
                         case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
                         case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
@@ -218,7 +230,6 @@ export const processRecurringTransactions = (transactions: Transaction[]): { new
         }
     });
 
-    // Si no hubo cambios, devolvemos arrays vacíos para no renderizar
     if (!hasChanges) return { newTransactions: [], updatedBaseTransactions: [] };
 
     return { newTransactions, updatedBaseTransactions: updatedBase };
