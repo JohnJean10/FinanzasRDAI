@@ -130,6 +130,9 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             const tDate = new Date(t.date);
             // Si elijo "Mes Pasado", el balance debe ser el que tenía EL ÚLTIMO DÍA del mes pasado
             if (tDate <= endDate) {
+                // AHORRO: No resta al balance total (es una transferencia interna), 
+                // pero si es Gasto resta, Ingreso suma.
+                if (t.type === 'saving') return acc;
                 return acc + (t.type === 'income' ? t.amount : -t.amount);
             }
             return acc;
@@ -141,7 +144,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         const totalGoalsTarget = goals.reduce((acc, goal) => acc + goal.target, 0);
 
         // 3. NUEVO: Calcular Disponible Real (Contabilidad Mental)
-        // Disponible = Lo que hay en el banco - Lo que ya tiene nombre (Metas)
+        // Disponible = Lo que hay en el banco (balance total) - Lo que ya tiene nombre (totalSavings)
+        // PERO: Si el usuario movió dinero a una cuenta externa (Saving), el balance bajó (si se tratara como gasto).
+        // AL TRATARLO COMO 'SAVING' (Neutro en Balance), "Historical Balance" incluye ese dinero.
+        // Entonces: Disponible = (Dinero Total) - (Dinero Asignado a Metas). CORRECTO.
         const availableBalance = historicalBalance - totalSavings;
 
         // 4. "La Película" (Flujo): Ingresos/Gastos DENTRO del rango seleccionado
@@ -256,7 +262,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     const addTransaction = (t: Omit<Transaction, 'id'>) => {
         const newTx = { ...t, id: Date.now() } as Transaction;
 
-        // Trigger Budget Check
+        // 1. Handle Budget Check (Only for Expenses)
         if (t.type === 'expense') {
             const budget = data.budgetConfigs.find(b => b.category === t.category);
             if (budget) {
@@ -272,14 +278,39 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             }
         }
 
+        // 2. Handle Savings Goal Update (Only for Savings)
+        if (t.type === 'saving' && t.goalId) {
+            setData(prev => ({
+                ...prev,
+                transactions: [newTx, ...prev.transactions],
+                goals: prev.goals.map(g =>
+                    g.id === t.goalId ? { ...g, current: g.current + t.amount } : g
+                )
+            }));
+            return; // Exit early since we set data here
+        }
+
         setData(prev => ({ ...prev, transactions: [newTx, ...prev.transactions] }));
     };
 
     const deleteTransaction = (id: number) => {
-        setData(prev => ({
-            ...prev,
-            transactions: prev.transactions.filter(t => t.id !== id)
-        }));
+        const txToDelete = data.transactions.find(t => t.id === id);
+
+        // If deleting a saving transaction, rollback the goal amount
+        if (txToDelete && txToDelete.type === 'saving' && txToDelete.goalId) {
+            setData(prev => ({
+                ...prev,
+                transactions: prev.transactions.filter(t => t.id !== id),
+                goals: prev.goals.map(g =>
+                    g.id === txToDelete.goalId ? { ...g, current: Math.max(0, g.current - txToDelete.amount) } : g
+                )
+            }));
+        } else {
+            setData(prev => ({
+                ...prev,
+                transactions: prev.transactions.filter(t => t.id !== id)
+            }));
+        }
     };
 
     const updateTransaction = (id: number, updates: Partial<Transaction>) => {

@@ -1,6 +1,6 @@
 export interface Transaction {
     id: number;
-    type: 'income' | 'expense';
+    type: 'income' | 'expense' | 'saving'; // Added 'saving'
     description: string;
     amount: number;
     category: string;
@@ -10,6 +10,7 @@ export interface Transaction {
     frequency?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
     nextPaymentDate?: string;
     subscriptionName?: string;
+    goalId?: number; // Added to link saving to a goal
 }
 
 export interface BudgetConfig {
