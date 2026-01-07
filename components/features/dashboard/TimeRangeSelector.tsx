@@ -24,9 +24,9 @@ export function TimeRangeSelector() {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
             <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
                 <SelectTrigger className="w-[240px] border-0 focus:ring-0 shadow-none h-8 p-0 bg-transparent font-medium">
-                    <SelectValue placeholder="Seleccionar periodo" />
+                    <SelectValue />
                 </SelectTrigger>
-                <SelectContent align="end">
+                <SelectContent>
                     <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground opacity-70">
                         Corto Plazo
                     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { AppData, Transaction, Goal, Debt, BudgetConfig, TimeRange } from '../types';
 import { NotificationService, Notification } from '../services/notifications';
 import { getBudgetMonthDate } from '../utils';
