@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.API_CONFIG_KEY || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const apiKey = process.env.API_CONFIG_KEY || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
 export async function POST(req: Request) {
     try {
         if (!apiKey) {
-            console.error("API Key missing");
+            // Debugging: List available keys (security safe, names only) to help diagnosis
+            const availableEnvVars = Object.keys(process.env).filter(k => k.includes('KEY') || k.includes('API') || k.includes('GEMINI'));
+            console.error("API Key missing. Available Env Vars:", availableEnvVars);
+
             return NextResponse.json(
-                { error: "API Key not configured on server" },
+                { error: `API Key not found on Server. Checked: GEMINI_API_KEY, GOOGLE_API_KEY. Visible Vars: ${availableEnvVars.join(', ') || 'NONE'}` },
                 { status: 500 }
             );
         }
