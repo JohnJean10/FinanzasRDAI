@@ -387,7 +387,7 @@ export default function DebtPage() {
                                                     <>
                                                         <Calendar className="h-3 w-3" />
                                                         <div className="flex justify-between w-full">
-                                                            <span>Corte: <strong>{paymentInfo?.cutoffLabel}</strong></span>
+                                                            <span>Corte: <strong>{(paymentInfo as any)?.cutoffLabel}</strong></span>
                                                             <span>Pago: <strong>{paymentInfo?.label}</strong></span>
                                                         </div>
                                                     </>
