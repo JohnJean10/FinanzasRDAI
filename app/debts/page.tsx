@@ -29,7 +29,7 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                     <Label>Tipo de Deuda</Label>
                     <Select
                         value={formData.type || 'credit_card'}
-                        onValueChange={(v: DebtType) => setFormData({ ...formData, type: v })}
+                        onValueChange={(v) => setFormData({ ...formData, type: v as DebtType })}
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -82,7 +82,7 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                         <Label>Frecuencia</Label>
                         <Select
                             value={formData.paymentFrequency || 'monthly'}
-                            onValueChange={(v: PaymentFrequency) => setFormData({ ...formData, paymentFrequency: v })}
+                            onValueChange={(v) => setFormData({ ...formData, paymentFrequency: v as PaymentFrequency })}
                         >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
