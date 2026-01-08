@@ -12,8 +12,74 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Trash2, TrendingDown, Target, ShieldAlert, CreditCard, Banknote, Calendar, Edit2, Wallet, Clock, AlertCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, calculateRealInterestRate } from "@/lib/utils"
 import { Debt, DebtType, PaymentFrequency } from "@/lib/types"
+import { Calculator } from "lucide-react"
+
+// --- COMPONENTE CALCULADORA DE TASA ---
+const RateCalculator = ({ onCalculate }: { onCalculate: (rate: number) => void }) => {
+    const [open, setOpen] = useState(false)
+    const [principal, setPrincipal] = useState("")
+    const [payment, setPayment] = useState("")
+    const [periods, setPeriods] = useState("")
+    const [frequency, setFrequency] = useState("30") // 30=Mensual default
+
+    const handleCalculate = () => {
+        const rate = calculateRealInterestRate(
+            Number(principal),
+            Number(payment),
+            Number(periods),
+            Number(frequency)
+        )
+        onCalculate(rate)
+        setOpen(false)
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2 text-blue-600 border-blue-200 hover:bg-blue-50">
+                    <Calculator className="h-3 w-3" /> Calcular Tasa
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xs">
+                <DialogHeader>
+                    <DialogTitle>Calculadora de Interés Real 🕵️‍♂️</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                    <div className="space-y-1">
+                        <Label className="text-xs">Monto Recibido (Prestado)</Label>
+                        <Input type="number" value={principal} onChange={e => setPrincipal(e.target.value)} placeholder="Ej: 10000" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs">Cuota a Pagar</Label>
+                        <Input type="number" value={payment} onChange={e => setPayment(e.target.value)} placeholder="Ej: 2200" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs">Cada cuánto tiempo?</Label>
+                        <Select value={frequency} onValueChange={setFrequency}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="7">Semanal (7 días)</SelectItem>
+                                <SelectItem value="15">Quincenal (15 días)</SelectItem>
+                                <SelectItem value="30">Mensual (30 días)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs">Número de Cuotas</Label>
+                        <Input type="number" value={periods} onChange={e => setPeriods(e.target.value)} placeholder="Ej: 12" />
+                    </div>
+                    <Button onClick={handleCalculate} className="w-full mt-2" disabled={!principal || !payment || !periods}>
+                        Calcular e Insertar
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 // --- COMPONENTE DE FORMULARIO MEJORADO ---
 interface DebtFormProps {
@@ -59,7 +125,10 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                 </div>
 
                 <div className="space-y-2">
-                    <Label>Tasa Anual Real (%)</Label>
+                    <div className="flex justify-between items-center">
+                        <Label>Tasa Anual Real (%)</Label>
+                        <RateCalculator onCalculate={(rate) => setFormData({ ...formData, interestRate: rate })} />
+                    </div>
                     <Input
                         type="number"
                         value={formData.interestRate || ''}
