@@ -29,14 +29,27 @@ export interface Goal {
     isLinkedToBudget?: boolean; // Toggle to reserve this amount in budget
     isNative?: boolean; // System goal (e.g., Emergency Fund)
 }
+// Deudas y Pasivos
+export type DebtType = 'credit_card' | 'loan' | 'informal'; // Tarjeta, Préstamo, Prestamista
 
 export interface Debt {
-    id: number;
+    id: string;
+    type: DebtType;
     name: string;
     currentBalance: number;
     interestRate: number;
     minPayment: number;
-    category?: string; // Optional category as suggested
+    category: string; // 'debt'
+
+    // Específico de Tarjetas
+    creditLimit?: number;
+    cutoffDay?: number; // Día de corte
+    paymentDay?: number; // Día límite de pago
+    availableBalance?: number; // Calculado (Límite - Saldo)
+
+    // Específico de Préstamos
+    endDate?: string; // Fecha fin acuerdo
+    isAmortized?: boolean; // True = Banco, False = Prestamista (solo interés)
 }
 
 export type TimeRange =

@@ -3,19 +3,26 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useFinancial } from "@/lib/context/financial-context"
 import { formatCurrency } from "@/lib/utils"
-import { ArrowDownIcon, ArrowUpIcon, DollarSign, Wallet, PiggyBank, Percent } from "lucide-react"
+import { ArrowDownIcon, ArrowUpIcon, DollarSign, Wallet, PiggyBank, Percent, TrendingDown, ShieldAlert } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
 export function KPIGrid() {
-    const { metrics } = useFinancial()
+    const { metrics, debts } = useFinancial()
 
     // Cálculo del porcentaje de progreso global de ahorros
     const savingsProgress = metrics.totalGoalsTarget > 0
         ? (metrics.totalSavings / metrics.totalGoalsTarget) * 100
         : 0;
 
+    // Cálculo del nuevo KPI de Deuda
+    const totalActiveDebts = debts.length;
+    const totalDebtBalance = debts.reduce((acc, d) => acc + d.currentBalance, 0);
+    const savingsToDebtRatio = totalDebtBalance > 0
+        ? (metrics.totalSavings / totalDebtBalance) * 100
+        : 100;
+
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 
             {/* 1. DISPONIBLE PARA USAR (La métrica reina) */}
             <Card className="border-l-4 border-l-emerald-500 shadow-sm">
@@ -92,6 +99,43 @@ export function KPIGrid() {
                         {metrics.savingsRate >= 0
                             ? "Del ingreso retenido este periodo"
                             : "Estás gastando más de lo que ingresas"}
+                    </p>
+                </CardContent>
+            </Card>
+
+            {/* 5. KPI DEUDAS ACTIVAS */}
+            <Card className="border-l-4 border-l-red-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Carga de Deuda
+                    </CardTitle>
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-red-600">
+                        {formatCurrency(totalDebtBalance)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {totalActiveDebts} deudas activas por saldar
+                    </p>
+                </CardContent>
+            </Card>
+
+            {/* 6. KPI RATIO COBERTURA (Ahorro vs Deuda) */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Cobertura de Deuda
+                    </CardTitle>
+                    <ShieldAlert className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">
+                        {savingsToDebtRatio.toFixed(1)}%
+                    </div>
+                    <Progress value={savingsToDebtRatio} className="h-2 mt-2" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                        De tu deuda cubierta por ahorros
                     </p>
                 </CardContent>
             </Card>
