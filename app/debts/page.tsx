@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { formatCurrency } from "@/lib/utils"
 import { Debt, DebtType } from "@/lib/types"
 
-// --- COMPONENTE DE FORMULARIO (EXTRAÍDO PARA EVITAR BUG DE FOCO) ---
+// --- COMPONENTE DE FORMULARIO (EXTRAÍDO) ---
 interface DebtFormProps {
     formData: Partial<Debt>;
     setFormData: (data: Partial<Debt>) => void;
@@ -162,24 +162,32 @@ export default function DebtPage() {
         isAmortized: true
     })
 
-    // --- FUNCIÓN INTELIGENTE DE FECHAS ---
+    // --- FUNCIÓN INTELIGENTE DE FECHAS V2 (CORREGIDA) ---
     const getSmartCardDates = (cutoffDay: number, paymentDay: number) => {
         const today = new Date();
-        const currentDay = today.getDate();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
+        today.setHours(0, 0, 0, 0); // Normalizar hora para comparaciones precisas
 
-        // Si hoy es día 25 y el pago es el 22 -> Toca el mes siguiente
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+
+        // 1. Encontrar la PRÓXIMA fecha de pago válida (hoy o futuro)
         let nextPaymentDate = new Date(currentYear, currentMonth, paymentDay);
-        if (currentDay > paymentDay) {
+
+        // Si la fecha calculada ya pasó (ej: hoy es 25, pago era el 5), el pago es el próximo mes
+        if (nextPaymentDate < today) {
             nextPaymentDate.setMonth(currentMonth + 1);
         }
 
-        // Si hoy es día 25 y el corte es el 4 -> Toca el mes siguiente
-        let nextCutoffDate = new Date(currentYear, currentMonth, cutoffDay);
-        if (currentDay > cutoffDay) {
-            nextCutoffDate.setMonth(currentMonth + 1);
+        // 2. Calcular la fecha de corte ASOCIADA a ese pago
+        // Si el día de pago es MENOR que el corte (ej: Pago 5, Corte 25), 
+        // significa que el corte ocurrió en el mes ANTERIOR al pago.
+        let associatedCutoffDate = new Date(nextPaymentDate.getFullYear(), nextPaymentDate.getMonth(), cutoffDay);
+
+        if (paymentDay < cutoffDay) {
+            // Ciclo cruzado: El corte fue el mes pasado
+            associatedCutoffDate.setMonth(associatedCutoffDate.getMonth() - 1);
         }
+        // Si paymentDay > cutoffDay (ej: Pago 25, Corte 5), son del mismo mes, no se resta nada.
 
         const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
 
@@ -188,7 +196,7 @@ export default function DebtPage() {
 
         return {
             paymentLabel: nextPaymentDate.toLocaleDateString('es-DO', options),
-            cutoffLabel: nextCutoffDate.toLocaleDateString('es-DO', options),
+            cutoffLabel: associatedCutoffDate.toLocaleDateString('es-DO', options),
             daysUntilPayment,
             isUrgent: daysUntilPayment <= 5 && daysUntilPayment >= 0
         };
@@ -350,8 +358,8 @@ export default function DebtPage() {
 
                                         {/* FECHAS INTELIGENTES */}
                                         <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${cardDates?.isUrgent
-                                            ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
-                                            : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                                ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
+                                                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                                             }`}>
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-3 w-3" />
