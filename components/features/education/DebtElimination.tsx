@@ -26,12 +26,12 @@ export function DebtElimination({ initialDebts = [] }: DebtEliminationProps) {
 
     const addDebt = () => {
         if (newDebt.name && newDebt.currentBalance && newDebt.interestRate && newDebt.minPayment) {
-            setDebts([...debts, { ...newDebt, id: Date.now() } as Debt])
+            setDebts([...debts, { ...newDebt, id: Date.now().toString() } as Debt])
             setNewDebt({})
         }
     }
 
-    const removeDebt = (id: number) => {
+    const removeDebt = (id: string) => {
         setDebts(debts.filter(d => d.id !== id))
     }
 
