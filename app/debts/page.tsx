@@ -28,8 +28,8 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                 <div className="col-span-2">
                     <Label>Tipo de Deuda</Label>
                     <Select
-                        value={formData.type}
-                        onValueChange={(v: DebtType) => setFormData({ ...formData, type: v })}
+                        value={formData.type || 'credit_card'}
+                        onValueChange={(v) => setFormData({ ...formData, type: v as DebtType })}
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -350,8 +350,8 @@ export default function DebtPage() {
 
                                         {/* FECHAS INTELIGENTES */}
                                         <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${cardDates?.isUrgent
-                                                ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
-                                                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                            ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
+                                            : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                                             }`}>
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-3 w-3" />
