@@ -156,7 +156,7 @@ Recordá: El objetivo es que cada usuario termine la conversación sintiendo que
 `;
 
         // Direct REST API Call using Experimental Model to bypass potential rate limits on main channel
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
