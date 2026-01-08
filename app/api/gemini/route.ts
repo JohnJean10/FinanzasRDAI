@@ -159,40 +159,36 @@ PREGUNTA DEL USUARIO: "${message}"
 Recordá: El objetivo es que cada usuario termine la conversación sintiendo que entiende mejor sus finanzas y sabiendo exactamente qué hacer mañana para avanzar hacia sus metas.
 `;
 
-        // Direct REST API Call using Experimental Model to bypass potential rate limits on main channel
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Initialize Google Generative AI within the request handler (best practice)
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        const chat = model.startChat({
+            history: [
+                {
+                    role: "user",
+                    parts: [{ text: systemPrompt + `\nCONTEXTO ACTUAL DEL USUARIO: ${JSON.stringify(context)}` }],
+                },
+                {
+                    role: "model",
+                    parts: [{ text: "Entendido. Soy FinanzasRD AI, listo para ayudar al usuario a organizarse con honestidad y estilo dominicano. Dame la entrada." }],
+                },
+            ],
+            generationConfig: {
+                maxOutputTokens: 1000,
             },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: systemPrompt }]
-                }]
-            })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Gemini REST API Error:", errorData);
-            throw new Error(`Gemini API Error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No pude generar una respuesta.";
+        const result = await chat.sendMessage(message);
+        const response = result.response;
+        const text = response.text();
 
         return NextResponse.json({ response: text });
     } catch (error: any) {
         console.error("Error calling Gemini API:", error);
 
-        // Extract detailed error info
-        const errorMessage = error.message || error.toString();
-        const errorDetails = error.response ? JSON.stringify(error.response) : '';
-
         return NextResponse.json(
-            { error: `Gemini API Fail: ${errorMessage} ${errorDetails}` },
+            { error: `FinanzasRD AI Error: ${error.message || 'Unknown error'}` },
             { status: 500 }
         );
     }
