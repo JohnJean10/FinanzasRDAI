@@ -44,8 +44,8 @@ export interface Debt {
     // Específico de Tarjetas
     creditLimit?: number;
     overdraftLimit?: number; // <--- ESTE ES EL NUEVO CAMPO
-    cutoffDay?: number; // Día de corte
-    paymentDay?: number; // Día límite de pago
+    nextCutoffDate?: string; // Fecha exacta próximo corte
+    nextPaymentDate?: string; // Fecha exacta próximo pago
     availableBalance?: number; // Calculado (Límite - Saldo)
 
     // Específico de Préstamos

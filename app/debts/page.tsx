@@ -99,21 +99,19 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                             <p className="text-[10px] text-muted-foreground">Monto adicional disponible permitido</p>
                         </div>
                         <div className="space-y-2">
-                            <Label>Día de Corte</Label>
+                            <Label>Próxima Fecha Corte</Label>
                             <Input
-                                type="number" max={31}
-                                value={formData.cutoffDay || ''}
-                                onChange={e => setFormData({ ...formData, cutoffDay: Number(e.target.value) })}
-                                placeholder="Ej: 4"
+                                type="date"
+                                value={formData.nextCutoffDate || ''}
+                                onChange={e => setFormData({ ...formData, nextCutoffDate: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Día Límite Pago</Label>
+                            <Label>Próxima Fecha Límite Pago</Label>
                             <Input
-                                type="number" max={31}
-                                value={formData.paymentDay || ''}
-                                onChange={e => setFormData({ ...formData, paymentDay: Number(e.target.value) })}
-                                placeholder="Ej: 22"
+                                type="date"
+                                value={formData.nextPaymentDate || ''}
+                                onChange={e => setFormData({ ...formData, nextPaymentDate: e.target.value })}
                             />
                         </div>
                     </>
@@ -156,50 +154,35 @@ export default function DebtPage() {
         minPayment: 0,
         creditLimit: 0,
         overdraftLimit: 0,
-        cutoffDay: 1,
-        paymentDay: 15,
+        nextCutoffDate: "",
+        nextPaymentDate: "",
         endDate: "",
         isAmortized: true
     })
 
-    // --- FUNCIÓN INTELIGENTE DE FECHAS V2 (CORREGIDA) ---
-    const getSmartCardDates = (cutoffDay: number, paymentDay: number) => {
+    // --- FUNCIÓN CALCULO DÍAS RESTANTES (SIMPLIFICADA) ---
+    const calculateDaysRemaining = (targetDateString?: string) => {
+        if (!targetDateString) return null;
+
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalizar hora para comparaciones precisas
+        today.setHours(0, 0, 0, 0);
 
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth();
+        // La fecha viene como YYYY-MM-DD, al hacer new Date() puede tener problemas de zona horaria si no se maneja bien
+        // Mejor splittear y crear fecha local
+        const [year, month, day] = targetDateString.split('-').map(Number);
+        const targetDate = new Date(year, month - 1, day);
 
-        // 1. Encontrar la PRÓXIMA fecha de pago válida (hoy o futuro)
-        let nextPaymentDate = new Date(currentYear, currentMonth, paymentDay);
+        const diffTime = targetDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Si la fecha calculada ya pasó (ej: hoy es 25, pago era el 5), el pago es el próximo mes
-        if (nextPaymentDate < today) {
-            nextPaymentDate.setMonth(currentMonth + 1);
-        }
+        return diffDays;
+    }
 
-        // 2. Calcular la fecha de corte ASOCIADA a ese pago
-        // Si el día de pago es MENOR que el corte (ej: Pago 5, Corte 25), 
-        // significa que el corte ocurrió en el mes ANTERIOR al pago.
-        let associatedCutoffDate = new Date(nextPaymentDate.getFullYear(), nextPaymentDate.getMonth(), cutoffDay);
-
-        if (paymentDay < cutoffDay) {
-            // Ciclo cruzado: El corte fue el mes pasado
-            associatedCutoffDate.setMonth(associatedCutoffDate.getMonth() - 1);
-        }
-        // Si paymentDay > cutoffDay (ej: Pago 25, Corte 5), son del mismo mes, no se resta nada.
-
-        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-
-        // Días restantes para pagar
-        const daysUntilPayment = Math.ceil((nextPaymentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-        return {
-            paymentLabel: nextPaymentDate.toLocaleDateString('es-DO', options),
-            cutoffLabel: associatedCutoffDate.toLocaleDateString('es-DO', options),
-            daysUntilPayment,
-            isUrgent: daysUntilPayment <= 5 && daysUntilPayment >= 0
-        };
+    const formatDateDisplay = (dateString?: string) => {
+        if (!dateString) return "N/A";
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('es-DO', { day: 'numeric', month: 'short' });
     }
 
     // --- ESTRATEGIA DE ORDENAMIENTO ---
@@ -213,7 +196,7 @@ export default function DebtPage() {
 
     // --- MANEJADORES ---
     const handleOpenAdd = () => {
-        setFormData({ type: 'credit_card', name: "", currentBalance: 0, interestRate: 0, minPayment: 0, creditLimit: 0, overdraftLimit: 0 })
+        setFormData({ type: 'credit_card', name: "", currentBalance: 0, interestRate: 0, minPayment: 0, creditLimit: 0, overdraftLimit: 0, nextCutoffDate: "", nextPaymentDate: "" })
         setIsAddOpen(true)
     }
 
@@ -237,7 +220,10 @@ export default function DebtPage() {
             minPayment: Number(formData.minPayment),
             creditLimit: Number(formData.creditLimit || 0),
             overdraftLimit: Number(formData.overdraftLimit || 0),
-            category: 'debt'
+            category: 'debt',
+            // Aseguramos que se guarden las fechas
+            nextCutoffDate: formData.nextCutoffDate,
+            nextPaymentDate: formData.nextPaymentDate
         } as Omit<Debt, 'id'>
 
         if (isEditOpen && selectedDebt) {
@@ -311,10 +297,8 @@ export default function DebtPage() {
                                 ? (debt.currentBalance / totalLimit) * 100
                                 : 100;
 
-                            // Cálculo Fechas Inteligentes
-                            const cardDates = debt.type === 'credit_card' && debt.cutoffDay && debt.paymentDay
-                                ? getSmartCardDates(debt.cutoffDay, debt.paymentDay)
-                                : null;
+                            const daysUntilPayment = calculateDaysRemaining(debt.nextPaymentDate);
+                            const isUrgent = daysUntilPayment !== null && daysUntilPayment <= 5 && daysUntilPayment >= 0;
 
                             return (
                                 <Card key={debt.id} className="relative overflow-hidden group border-l-4 border-l-red-500 hover:shadow-lg transition-all">
@@ -356,8 +340,8 @@ export default function DebtPage() {
                                             </div>
                                         </div>
 
-                                        {/* FECHAS INTELIGENTES */}
-                                        <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${cardDates?.isUrgent
+                                        {/* FECHAS INTELIGENTES (AHORA EXPLÍCITAS) */}
+                                        <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${isUrgent
                                             ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
                                             : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                                             }`}>
@@ -365,17 +349,17 @@ export default function DebtPage() {
                                                 <Calendar className="h-3 w-3" />
                                                 {debt.type === 'credit_card' ? (
                                                     <div className="flex justify-between w-full">
-                                                        <span>Fecha Corte: <strong>{cardDates?.cutoffLabel}</strong></span>
-                                                        <span>Límite Pago: <strong>{cardDates?.paymentLabel}</strong></span>
+                                                        <span>Fecha Corte: <strong>{formatDateDisplay(debt.nextCutoffDate)}</strong></span>
+                                                        <span>Límite Pago: <strong>{formatDateDisplay(debt.nextPaymentDate)}</strong></span>
                                                     </div>
                                                 ) : (
                                                     <span>Vencimiento: {debt.endDate || 'No definido'}</span>
                                                 )}
                                             </div>
-                                            {cardDates?.isUrgent && (
+                                            {isUrgent && (
                                                 <div className="font-bold flex items-center gap-1 mt-1">
                                                     <ShieldAlert className="h-3 w-3" />
-                                                    ¡Atención! Faltan {cardDates.daysUntilPayment} días para pagar.
+                                                    ¡Atención! Faltan {daysUntilPayment} días para pagar.
                                                 </div>
                                             )}
                                         </div>
