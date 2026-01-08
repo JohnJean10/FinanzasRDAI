@@ -102,7 +102,7 @@ export default function DebtPage() {
                 <div className="col-span-2">
                     <Label>Tipo de Deuda</Label>
                     <Select
-                        value={formData.type}
+                        value={formData.type || 'credit_card'}
                         onValueChange={(v: DebtType) => setFormData({ ...formData, type: v })}
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
