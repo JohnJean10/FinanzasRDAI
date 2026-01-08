@@ -32,6 +32,8 @@ export interface Goal {
 // Deudas y Pasivos
 export type DebtType = 'credit_card' | 'loan' | 'informal'; // Tarjeta, Préstamo, Prestamista
 
+export type PaymentFrequency = 'weekly' | 'biweekly' | 'monthly';
+
 export interface Debt {
     id: string;
     type: DebtType;
@@ -39,14 +41,15 @@ export interface Debt {
     currentBalance: number;
     interestRate: number;
     minPayment: number;
+    paymentFrequency?: PaymentFrequency; // Default to monthly if undefined
     category: string; // 'debt'
 
     // Específico de Tarjetas
     creditLimit?: number;
-    overdraftLimit?: number; // <--- ESTE ES EL NUEVO CAMPO
-    nextCutoffDate?: string; // Fecha exacta próximo corte
-    nextPaymentDate?: string; // Fecha exacta próximo pago
-    availableBalance?: number; // Calculado (Límite - Saldo)
+    overdraftLimit?: number;
+    cutoffDay?: number; // Día de corte
+    paymentDay?: number; // Día límite de pago (o día de pago para préstamos)
+    availableBalance?: number;
 
     // Específico de Préstamos
     endDate?: string; // Fecha fin acuerdo

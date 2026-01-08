@@ -10,12 +10,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Trash2, TrendingDown, Target, ShieldAlert, CreditCard, Banknote, Calendar, Edit2, Wallet } from "lucide-react"
+import { Plus, Trash2, TrendingDown, Target, ShieldAlert, CreditCard, Banknote, Calendar, Edit2, Wallet, Clock, AlertCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { formatCurrency } from "@/lib/utils"
-import { Debt, DebtType } from "@/lib/types"
+import { Debt, DebtType, PaymentFrequency } from "@/lib/types"
 
-// --- COMPONENTE DE FORMULARIO (EXTRAÍDO) ---
+// --- COMPONENTE DE FORMULARIO MEJORADO ---
 interface DebtFormProps {
     formData: Partial<Debt>;
     setFormData: (data: Partial<Debt>) => void;
@@ -28,29 +28,29 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                 <div className="col-span-2">
                     <Label>Tipo de Deuda</Label>
                     <Select
-                        value={formData.type || 'credit_card'}
-                        onValueChange={(v) => setFormData({ ...formData, type: v as DebtType })}
+                        value={formData.type}
+                        onValueChange={(v: DebtType) => setFormData({ ...formData, type: v })}
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="credit_card">💳 Tarjeta de Crédito</SelectItem>
-                            <SelectItem value="loan">🏦 Préstamo Bancario</SelectItem>
-                            <SelectItem value="informal">🤝 Préstamo Informal / Prestamista</SelectItem>
+                            <SelectItem value="loan">🏦 Préstamo Bancario / Financiamiento</SelectItem>
+                            <SelectItem value="informal">🤝 Préstamo Informal / Acuerdo</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
                 <div className="col-span-2">
-                    <Label>Nombre / Banco</Label>
+                    <Label>Nombre / Referencia</Label>
                     <Input
                         value={formData.name || ''}
                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Ej: Visa Popular"
+                        placeholder={formData.type === 'informal' ? "Ej: Acuerdo Pasola" : "Ej: Préstamo Popular"}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label>Saldo Actual (Deuda)</Label>
+                    <Label>Saldo Actual</Label>
                     <Input
                         type="number"
                         value={formData.currentBalance || ''}
@@ -59,85 +59,96 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                 </div>
 
                 <div className="space-y-2">
-                    <Label>Tasa Anual (%)</Label>
+                    <Label>Tasa Anual Real (%)</Label>
                     <Input
                         type="number"
                         value={formData.interestRate || ''}
                         onChange={e => setFormData({ ...formData, interestRate: Number(e.target.value) })}
-                        placeholder="60"
+                        placeholder="Ej: 60"
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <Label>{formData.type === 'credit_card' ? 'Pago Mínimo' : 'Cuota Mensual'}</Label>
-                    <Input
-                        type="number"
-                        value={formData.minPayment || ''}
-                        onChange={e => setFormData({ ...formData, minPayment: Number(e.target.value) })}
-                    />
+                {/* SECCIÓN DE PAGOS */}
+                <div className="col-span-2 grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border">
+                    <div className="space-y-2">
+                        <Label>{formData.type === 'credit_card' ? 'Pago Mínimo' : 'Monto Cuota'}</Label>
+                        <Input
+                            type="number"
+                            value={formData.minPayment || ''}
+                            onChange={e => setFormData({ ...formData, minPayment: Number(e.target.value) })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Frecuencia</Label>
+                        <Select
+                            value={formData.paymentFrequency || 'monthly'}
+                            onValueChange={(v: PaymentFrequency) => setFormData({ ...formData, paymentFrequency: v })}
+                        >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="monthly">Mensual (x1)</SelectItem>
+                                <SelectItem value="biweekly">Quincenal (x2)</SelectItem>
+                                <SelectItem value="weekly">Semanal (x4)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {/* CAMPOS ESPECÍFICOS DE TARJETA */}
                 {formData.type === 'credit_card' && (
                     <>
                         <div className="space-y-2">
-                            <Label>Límite de Crédito (Facial)</Label>
-                            <Input
-                                type="number"
-                                value={formData.creditLimit || ''}
-                                onChange={e => setFormData({ ...formData, creditLimit: Number(e.target.value) })}
-                            />
+                            <Label>Límite Crédito</Label>
+                            <Input type="number" value={formData.creditLimit || ''} onChange={e => setFormData({ ...formData, creditLimit: Number(e.target.value) })} />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-blue-600 dark:text-blue-400">Límite Sobregiro (Extra)</Label>
-                            <Input
-                                type="number"
-                                value={formData.overdraftLimit || ''}
-                                onChange={e => setFormData({ ...formData, overdraftLimit: Number(e.target.value) })}
-                                placeholder="Opcional"
-                            />
-                            <p className="text-[10px] text-muted-foreground">Monto adicional disponible permitido</p>
+                            <Label className="text-blue-600 dark:text-blue-400">Límite Sobregiro</Label>
+                            <Input type="number" value={formData.overdraftLimit || ''} onChange={e => setFormData({ ...formData, overdraftLimit: Number(e.target.value) })} placeholder="Opcional" />
                         </div>
                         <div className="space-y-2">
-                            <Label>Próxima Fecha Corte</Label>
-                            <Input
-                                type="date"
-                                value={formData.nextCutoffDate || ''}
-                                onChange={e => setFormData({ ...formData, nextCutoffDate: e.target.value })}
-                            />
+                            <Label>Día Corte</Label>
+                            <Input type="number" max={31} value={formData.cutoffDay || ''} onChange={e => setFormData({ ...formData, cutoffDay: Number(e.target.value) })} />
                         </div>
                         <div className="space-y-2">
-                            <Label>Próxima Fecha Límite Pago</Label>
-                            <Input
-                                type="date"
-                                value={formData.nextPaymentDate || ''}
-                                onChange={e => setFormData({ ...formData, nextPaymentDate: e.target.value })}
-                            />
+                            <Label>Día Pago</Label>
+                            <Input type="number" max={31} value={formData.paymentDay || ''} onChange={e => setFormData({ ...formData, paymentDay: Number(e.target.value) })} />
                         </div>
                     </>
                 )}
 
-                {/* CAMPOS ESPECÍFICOS DE PRÉSTAMO */}
+                {/* CAMPOS ESPECÍFICOS DE PRÉSTAMO (AHORA CON DÍA DE PAGO) */}
                 {(formData.type === 'loan' || formData.type === 'informal') && (
-                    <div className="col-span-2 space-y-2">
-                        <Label>Fecha Final (Estimada o Acuerdo)</Label>
-                        <Input
-                            type="date"
-                            value={formData.endDate || ''}
-                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                        />
-                    </div>
+                    <>
+                        <div className="space-y-2">
+                            <Label className="text-emerald-600 dark:text-emerald-400 font-semibold">Día de Pago (Mensual)</Label>
+                            <Input
+                                type="number" min={1} max={31}
+                                placeholder="Ej: 15 o 30"
+                                value={formData.paymentDay || ''} // Reusamos paymentDay para préstamos
+                                onChange={e => setFormData({ ...formData, paymentDay: Number(e.target.value) })}
+                            />
+                            <p className="text-[10px] text-muted-foreground">Día del mes que toca la cuota</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Fecha Final (Vencimiento)</Label>
+                            <Input
+                                type="date"
+                                value={formData.endDate || ''}
+                                onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                            />
+                        </div>
+                    </>
                 )}
             </div>
         </div>
     )
 }
 
-// --- COMPONENTE PRINCIPAL ---
+// --- PÁGINA PRINCIPAL ---
 export default function DebtPage() {
     const { debts, addDebt, deleteDebt, updateDebt, payDebt } = useFinancial()
 
-    // Estados de UI
+    // Estados UI
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [isPayOpen, setIsPayOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
@@ -145,71 +156,107 @@ export default function DebtPage() {
     const [paymentAmount, setPaymentAmount] = useState("")
     const [strategy, setStrategy] = useState<'snowball' | 'avalanche'>('snowball')
 
-    // Estado del formulario
+    // Estado Formulario
     const [formData, setFormData] = useState<Partial<Debt>>({
         type: 'credit_card',
         name: "",
         currentBalance: 0,
         interestRate: 0,
         minPayment: 0,
+        paymentFrequency: 'monthly',
         creditLimit: 0,
         overdraftLimit: 0,
-        nextCutoffDate: "",
-        nextPaymentDate: "",
+        cutoffDay: 1,
+        paymentDay: 15,
         endDate: "",
         isAmortized: true
     })
 
-    // --- FUNCIÓN CALCULO DÍAS RESTANTES (SIMPLIFICADA) ---
-    const calculateDaysRemaining = (targetDateString?: string) => {
-        if (!targetDateString) return null;
-
+    // --- CÁLCULO DE FECHAS DE PAGO (PARA TODOS LOS TIPOS) ---
+    const getNextPaymentDate = (debt: Debt) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+        const dayOfPayment = debt.paymentDay || 30; // Default a fin de mes si no hay día
 
-        // La fecha viene como YYYY-MM-DD, al hacer new Date() puede tener problemas de zona horaria si no se maneja bien
-        // Mejor splittear y crear fecha local
-        const [year, month, day] = targetDateString.split('-').map(Number);
-        const targetDate = new Date(year, month - 1, day);
+        // 1. Calcular Próxima Fecha
+        let nextDate = new Date(currentYear, currentMonth, dayOfPayment);
 
-        const diffTime = targetDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays;
-    }
-
-    const formatDateDisplay = (dateString?: string) => {
-        if (!dateString) return "N/A";
-        const [year, month, day] = dateString.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
-        return date.toLocaleDateString('es-DO', { day: 'numeric', month: 'short' });
-    }
-
-    // --- ESTRATEGIA DE ORDENAMIENTO ---
-    const sortedDebts = [...debts].sort((a, b) => {
-        if (strategy === 'snowball') {
-            return a.currentBalance - b.currentBalance
-        } else {
-            return b.interestRate - a.interestRate
+        // Si el día ya pasó, pasamos al próximo mes
+        if (nextDate < today) {
+            nextDate.setMonth(currentMonth + 1);
         }
+
+        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+        const daysUntil = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const isUrgent = daysUntil <= 5 && daysUntil >= 0;
+
+        return {
+            label: nextDate.toLocaleDateString('es-DO', options), // "15 feb."
+            daysUntil,
+            isUrgent,
+            rawDate: nextDate
+        };
+    }
+
+    // --- CÁLCULO ESPECÍFICO TARJETAS (CORTE + PAGO) ---
+    const getCardDates = (debt: Debt) => {
+        const paymentInfo = getNextPaymentDate(debt);
+
+        // Calcular Corte asociado (usualmente mes anterior si PAGO < CORTE)
+        const cutoffDay = debt.cutoffDay || 1;
+        let cutoffDate = new Date(paymentInfo.rawDate.getFullYear(), paymentInfo.rawDate.getMonth(), cutoffDay);
+
+        if ((debt.paymentDay || 15) < cutoffDay) {
+            cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+        }
+
+        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+
+        return {
+            ...paymentInfo,
+            cutoffLabel: cutoffDate.toLocaleDateString('es-DO', options)
+        };
+    }
+
+    // --- CÁLCULO DE IMPACTO MENSUAL ---
+    const calculateMonthlyImpact = (debt: Debt) => {
+        const amount = debt.minPayment;
+        switch (debt.paymentFrequency) {
+            case 'weekly': return amount * 4;
+            case 'biweekly': return amount * 2;
+            default: return amount;
+        }
+    }
+
+    const totalMonthlyCommitment = debts.reduce((acc, d) => acc + calculateMonthlyImpact(d), 0);
+
+    // Estrategia Ordenamiento
+    const sortedDebts = [...debts].sort((a, b) => {
+        if (strategy === 'snowball') return a.currentBalance - b.currentBalance;
+        return b.interestRate - a.interestRate;
     })
 
-    // --- MANEJADORES ---
+    // Manejadores
     const handleOpenAdd = () => {
-        setFormData({ type: 'credit_card', name: "", currentBalance: 0, interestRate: 0, minPayment: 0, creditLimit: 0, overdraftLimit: 0, nextCutoffDate: "", nextPaymentDate: "" })
-        setIsAddOpen(true)
+        setFormData({
+            type: 'credit_card', name: "", currentBalance: 0, interestRate: 0, minPayment: 0,
+            paymentFrequency: 'monthly', creditLimit: 0, overdraftLimit: 0, paymentDay: 15
+        });
+        setIsAddOpen(true);
     }
 
     const handleOpenEdit = (debt: Debt) => {
-        setFormData(debt)
-        setSelectedDebt(debt)
-        setIsEditOpen(true)
+        setFormData(debt);
+        setSelectedDebt(debt);
+        setIsEditOpen(true);
     }
 
     const handleOpenPay = (debt: Debt) => {
-        setSelectedDebt(debt)
-        setPaymentAmount("")
-        setIsPayOpen(true)
+        setSelectedDebt(debt);
+        setPaymentAmount("");
+        setIsPayOpen(true);
     }
 
     const handleSave = () => {
@@ -220,92 +267,85 @@ export default function DebtPage() {
             minPayment: Number(formData.minPayment),
             creditLimit: Number(formData.creditLimit || 0),
             overdraftLimit: Number(formData.overdraftLimit || 0),
-            category: 'debt',
-            // Aseguramos que se guarden las fechas
-            nextCutoffDate: formData.nextCutoffDate,
-            nextPaymentDate: formData.nextPaymentDate
+            paymentDay: Number(formData.paymentDay || 0), // Guardamos el día para todos
+            category: 'debt'
         } as Omit<Debt, 'id'>
 
         if (isEditOpen && selectedDebt) {
-            updateDebt(selectedDebt.id, debtPayload)
-            setIsEditOpen(false)
+            updateDebt(selectedDebt.id, debtPayload);
+            setIsEditOpen(false);
         } else {
-            addDebt(debtPayload)
-            setIsAddOpen(false)
+            addDebt(debtPayload);
+            setIsAddOpen(false);
         }
     }
 
     const handlePayment = () => {
         if (selectedDebt && paymentAmount) {
-            payDebt(selectedDebt.id, parseFloat(paymentAmount))
-            setIsPayOpen(false)
+            payDebt(selectedDebt.id, parseFloat(paymentAmount));
+            setIsPayOpen(false);
         }
     }
 
     return (
         <div className="p-6 space-y-8 max-w-6xl mx-auto pb-24">
 
-            {/* Header y Botón Agregar */}
+            {/* Header & Stats Rápidas */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Centro de Deudas</h1>
                     <p className="text-muted-foreground">Gestiona tus pasivos y ejecuta tu plan de salida.</p>
                 </div>
-                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleOpenAdd}>
-                            <Plus className="mr-2 h-4 w-4" /> Nueva Deuda
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Registrar Nueva Obligación</DialogTitle>
-                        </DialogHeader>
-                        <DebtForm formData={formData} setFormData={setFormData} />
-                        <DialogFooter>
-                            <Button onClick={handleSave}>Guardar Deuda</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <div className="flex gap-4">
+                    {/* Tarjeta Resumen Rápido */}
+                    <div className="hidden md:block bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">Compromiso Mensual Total</p>
+                        <p className="text-lg font-bold text-red-600">{formatCurrency(totalMonthlyCommitment)}</p>
+                    </div>
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleOpenAdd}>
+                                <Plus className="mr-2 h-4 w-4" /> Nueva Deuda
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Registrar Obligación</DialogTitle>
+                            </DialogHeader>
+                            <DebtForm formData={formData} setFormData={setFormData} />
+                            <DialogFooter>
+                                <Button onClick={handleSave}>Guardar</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             {/* Selector de Estrategia */}
             <div className="flex flex-col gap-4">
                 <Tabs value={strategy} onValueChange={(v) => setStrategy(v as any)} className="w-full">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-lg font-semibold">Estrategia de Ataque:</h2>
-                        <TabsList>
-                            <TabsTrigger value="snowball">Bola de Nieve ❄️</TabsTrigger>
-                            <TabsTrigger value="avalanche">Avalancha 🏔️</TabsTrigger>
-                        </TabsList>
-                    </div>
+                    <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+                        <TabsTrigger value="snowball">Bola de Nieve ❄️</TabsTrigger>
+                        <TabsTrigger value="avalanche">Avalancha 🏔️</TabsTrigger>
+                    </TabsList>
 
-                    <div className="bg-muted/30 p-4 rounded-lg border text-sm mb-6">
-                        {strategy === 'snowball'
-                            ? "🎯 Prioridad: Pagar la deuda más PEQUEÑA primero. Ideal para ganar motivación rápida."
-                            : "🧠 Prioridad: Pagar la deuda con MAYOR TASA DE INTERÉS primero. Matemáticamente superior."}
-                    </div>
-
-                    {/* LISTA DE DEUDAS ORDENADA */}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {sortedDebts.map((debt, index) => {
-                            // Cálculo Disponible con Sobregiro
                             const totalLimit = (debt.creditLimit || 0) + (debt.overdraftLimit || 0);
                             const available = totalLimit - debt.currentBalance;
+                            const progress = totalLimit > 0 ? (debt.currentBalance / totalLimit) * 100 : 100;
 
-                            const progress = totalLimit > 0
-                                ? (debt.currentBalance / totalLimit) * 100
-                                : 100;
+                            // Lógica de Fechas Inteligente (Universal)
+                            const paymentInfo = debt.type === 'credit_card'
+                                ? getCardDates(debt)
+                                : (debt.paymentDay ? getNextPaymentDate(debt) : null);
 
-                            const daysUntilPayment = calculateDaysRemaining(debt.nextPaymentDate);
-                            const isUrgent = daysUntilPayment !== null && daysUntilPayment <= 5 && daysUntilPayment >= 0;
+                            const freqLabel = { monthly: '/mes', biweekly: '/quincena', weekly: '/semana' }[debt.paymentFrequency || 'monthly'];
 
                             return (
                                 <Card key={debt.id} className="relative overflow-hidden group border-l-4 border-l-red-500 hover:shadow-lg transition-all">
                                     <div className="absolute top-2 right-2 flex gap-2">
-                                        <Badge variant={index === 0 ? "destructive" : "secondary"}>
-                                            #{index + 1}
-                                        </Badge>
+                                        <Badge variant={index === 0 ? "destructive" : "secondary"}>#{index + 1}</Badge>
                                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleOpenEdit(debt)}>
                                             <Edit2 className="h-3 w-3" />
                                         </Button>
@@ -318,13 +358,9 @@ export default function DebtPage() {
                                         </CardTitle>
                                         <CardDescription>
                                             {debt.type === 'credit_card' && totalLimit > 0
-                                                ? (
-                                                    <span className="text-emerald-600 font-medium">
-                                                        Disp: {formatCurrency(available)}
-                                                        {debt.overdraftLimit ? <span className="text-xs text-muted-foreground"> (Incl. Sobregiro)</span> : ''}
-                                                    </span>
-                                                )
-                                                : `Tasa: ${debt.interestRate}% Anual`}
+                                                ? <span className="text-emerald-600 font-medium">Disp: {formatCurrency(available)}</span>
+                                                : `Tasa Real: ${debt.interestRate}%`
+                                            }
                                         </CardDescription>
                                     </CardHeader>
 
@@ -335,31 +371,46 @@ export default function DebtPage() {
                                                 <p className="text-2xl font-bold text-red-600">{formatCurrency(debt.currentBalance)}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-muted-foreground">Min/Cuota</p>
-                                                <p className="font-semibold">{formatCurrency(debt.minPayment)}</p>
+                                                <p className="text-xs text-muted-foreground">Cuota</p>
+                                                <p className="font-semibold">{formatCurrency(debt.minPayment)}<span className="text-xs text-muted-foreground">{freqLabel}</span></p>
                                             </div>
                                         </div>
 
-                                        {/* FECHAS INTELIGENTES (AHORA EXPLÍCITAS) */}
-                                        <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${isUrgent
-                                            ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
-                                            : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                        {/* PANEL DE ALERTAS Y FECHAS */}
+                                        <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${paymentInfo?.isUrgent
+                                                ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
+                                                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                                             }`}>
                                             <div className="flex items-center gap-2">
-                                                <Calendar className="h-3 w-3" />
                                                 {debt.type === 'credit_card' ? (
-                                                    <div className="flex justify-between w-full">
-                                                        <span>Fecha Corte: <strong>{formatDateDisplay(debt.nextCutoffDate)}</strong></span>
-                                                        <span>Límite Pago: <strong>{formatDateDisplay(debt.nextPaymentDate)}</strong></span>
-                                                    </div>
+                                                    // Layout Tarjeta
+                                                    <>
+                                                        <Calendar className="h-3 w-3" />
+                                                        <div className="flex justify-between w-full">
+                                                            <span>Corte: <strong>{paymentInfo?.cutoffLabel}</strong></span>
+                                                            <span>Pago: <strong>{paymentInfo?.label}</strong></span>
+                                                        </div>
+                                                    </>
                                                 ) : (
-                                                    <span>Vencimiento: {debt.endDate || 'No definido'}</span>
+                                                    // Layout Préstamo
+                                                    <>
+                                                        <Clock className="h-3 w-3" />
+                                                        <div className="flex justify-between w-full">
+                                                            {paymentInfo ? (
+                                                                <span>Próximo Pago: <strong>{paymentInfo.label}</strong></span>
+                                                            ) : (
+                                                                <span>Vencimiento Final: <strong>{debt.endDate || 'N/A'}</strong></span>
+                                                            )}
+                                                        </div>
+                                                    </>
                                                 )}
                                             </div>
-                                            {isUrgent && (
-                                                <div className="font-bold flex items-center gap-1 mt-1">
-                                                    <ShieldAlert className="h-3 w-3" />
-                                                    ¡Atención! Faltan {daysUntilPayment} días para pagar.
+
+                                            {/* Mensaje de Urgencia */}
+                                            {paymentInfo?.isUrgent && (
+                                                <div className="font-bold flex items-center gap-1 mt-1 animate-pulse">
+                                                    <AlertCircle className="h-3 w-3" />
+                                                    ¡Atención! Faltan {paymentInfo.daysUntil} días.
                                                 </div>
                                             )}
                                         </div>
@@ -367,12 +418,8 @@ export default function DebtPage() {
                                         <Progress value={progress} className="h-2" indicatorColor="bg-red-500" />
 
                                         <div className="flex gap-2">
-                                            <Button className="w-full" variant="default" onClick={() => handleOpenPay(debt)}>
-                                                Registrar Pago
-                                            </Button>
-                                            <Button variant="outline" size="icon" onClick={() => deleteDebt(debt.id)}>
-                                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-                                            </Button>
+                                            <Button className="w-full" variant="default" onClick={() => handleOpenPay(debt)}>Registrar Pago</Button>
+                                            <Button variant="outline" size="icon" onClick={() => deleteDebt(debt.id)}><Trash2 className="h-4 w-4" /></Button>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -382,44 +429,23 @@ export default function DebtPage() {
                 </Tabs>
             </div>
 
-            {/* MODAL DE PAGOS */}
+            {/* MODALES DE ACCIÓN */}
             <Dialog open={isPayOpen} onOpenChange={setIsPayOpen}>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Registrar Abono</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle>Registrar Abono</DialogTitle></DialogHeader>
                     <div className="space-y-4 py-4">
-                        <p className="text-sm text-muted-foreground">
-                            Estás abonando a: <span className="font-bold text-foreground">{selectedDebt?.name}</span>
-                        </p>
-                        <div className="space-y-2">
-                            <Label>Monto Pagado</Label>
-                            <Input
-                                type="number"
-                                value={paymentAmount}
-                                onChange={(e) => setPaymentAmount(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
+                        <p className="text-sm text-muted-foreground">Abonando a: <span className="font-bold">{selectedDebt?.name}</span></p>
+                        <Input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} autoFocus placeholder="Monto" />
                     </div>
-                    <DialogFooter>
-                        <Button onClick={handlePayment} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            Confirmar Pago 🎉
-                        </Button>
-                    </DialogFooter>
+                    <DialogFooter><Button onClick={handlePayment} className="w-full bg-emerald-600">Confirmar</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* MODAL DE EDICIÓN */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Editar Deuda</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle>Editar Deuda</DialogTitle></DialogHeader>
                     <DebtForm formData={formData} setFormData={setFormData} />
-                    <DialogFooter>
-                        <Button onClick={handleSave}>Actualizar Cambios</Button>
-                    </DialogFooter>
+                    <DialogFooter><Button onClick={handleSave}>Actualizar</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
