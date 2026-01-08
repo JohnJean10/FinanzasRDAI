@@ -73,16 +73,27 @@ export function ChatInterface() {
 
             const data = await response.json();
 
+            if (!response.ok || data.error) {
+                throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+            }
+
             const aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
-                text: data.response || "Lo siento, tuve un problema conexión. ¿Intenta de nuevo?",
+                text: data.response,
                 sender: 'ai',
                 timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
             };
 
             setMessages(prev => [...prev, aiMsg]);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const errorMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: `⚠️ Error: ${error.message || "No pude conectar con el servidor."}`,
+                sender: 'ai',
+                timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, errorMsg]);
         } finally {
             setIsLoading(false);
         }
