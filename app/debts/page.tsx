@@ -28,7 +28,7 @@ const DebtForm = ({ formData, setFormData }: DebtFormProps) => {
                 <div className="col-span-2">
                     <Label>Tipo de Deuda</Label>
                     <Select
-                        value={formData.type}
+                        value={formData.type || 'credit_card'}
                         onValueChange={(v: DebtType) => setFormData({ ...formData, type: v })}
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -378,8 +378,8 @@ export default function DebtPage() {
 
                                         {/* PANEL DE ALERTAS Y FECHAS */}
                                         <div className={`flex flex-col gap-1 text-xs p-2 rounded border ${paymentInfo?.isUrgent
-                                                ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
-                                                : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                            ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:border-red-900"
+                                            : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                                             }`}>
                                             <div className="flex items-center gap-2">
                                                 {debt.type === 'credit_card' ? (
