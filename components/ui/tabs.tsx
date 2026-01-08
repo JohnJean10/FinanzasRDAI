@@ -7,8 +7,26 @@ const TabsContext = React.createContext<{
     setActiveTab: (id: string) => void;
 } | null>(null);
 
-const Tabs = ({ defaultValue, children, className, ...props }: React.HTMLAttributes<HTMLDivElement> & { defaultValue: string }) => {
-    const [activeTab, setActiveTab] = React.useState(defaultValue);
+interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
+    defaultValue?: string;
+    value?: string;
+    onValueChange?: (value: string) => void;
+}
+
+const Tabs = ({ defaultValue, value, onValueChange, children, className, ...props }: TabsProps) => {
+    // Internal state for uncontrolled mode
+    const [internalTab, setInternalTab] = React.useState(defaultValue || "");
+
+    // Determine active tab (controlled > uncontrolled)
+    const activeTab = value !== undefined ? value : internalTab;
+
+    const setActiveTab = (newTab: string) => {
+        if (value === undefined) {
+            setInternalTab(newTab);
+        }
+        onValueChange?.(newTab);
+    };
+
     return (
         <TabsContext.Provider value={{ activeTab, setActiveTab }}>
             <div className={className} {...props}>
