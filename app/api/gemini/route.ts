@@ -161,7 +161,7 @@ Recordá: El objetivo es que cada usuario termine la conversación sintiendo que
 
         // Initialize Google Generative AI within the request handler (best practice)
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
         const chat = model.startChat({
             history: [
