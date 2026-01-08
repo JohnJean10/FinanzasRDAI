@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { useFinancial } from "@/lib/context/financial-context";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface Message {
     id: string;
@@ -14,7 +14,7 @@ interface Message {
 }
 
 export function ChatInterface() {
-    const { user, transactions, debts } = useFinancial();
+    const { user, transactions, debts, metrics } = useFinancial();
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -50,13 +50,24 @@ export function ChatInterface() {
         setIsLoading(true);
 
         try {
+            // Context Formatting
+            const contextSummary = {
+                balanceDisponible: formatCurrency(metrics.availableBalance),
+                deudas: debts.map(d => `${d.name}: ${formatCurrency(d.currentBalance)} (Tasa: ${d.interestRate}%)`),
+                gastosRecientes: transactions.slice(0, 5).map(t => `${t.category}: ${formatCurrency(t.amount)} (${new Date(t.date).toLocaleDateString()})`),
+                ingresosMensuales: formatCurrency(user.monthlyIncome)
+            };
+
             // Secure Backend Call
             const response = await fetch('/api/gemini', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: userMsg.text,
-                    context: { user, recentTransactions: transactions.slice(0, 5), debts }
+                    context: {
+                        userProfile: user,
+                        financialSnapshot: contextSummary
+                    }
                 })
             });
 
