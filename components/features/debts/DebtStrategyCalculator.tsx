@@ -16,15 +16,15 @@ export function DebtStrategyCalculator({ debts }: { debts: Debt[] }) {
     const [extraPayment, setExtraPayment] = useState(2000); // Default extra payment
 
     const calculateStrategy = (method: 'snowball' | 'avalanche'): StrategyResult => {
-        let currentDebts = debts.map(d => ({ ...d, currentBalance: d.balance }));
+        let currentDebts = debts.map(d => ({ ...d, currentBalance: d.currentBalance }));
         let months = 0;
         let totalInterest = 0;
 
         // Sort based on strategy
         if (method === 'snowball') {
-            currentDebts.sort((a, b) => a.balance - b.balance);
+            currentDebts.sort((a, b) => a.currentBalance - b.currentBalance);
         } else {
-            currentDebts.sort((a, b) => b.rate - a.rate);
+            currentDebts.sort((a, b) => b.interestRate - a.interestRate);
         }
 
         let activeDebts = true;
@@ -40,7 +40,7 @@ export function DebtStrategyCalculator({ debts }: { debts: Debt[] }) {
                 allPaid = false;
 
                 // Calculate Interest
-                const monthlyRate = (debt.rate / 100) / 12;
+                const monthlyRate = (debt.interestRate / 100) / 12;
                 const interest = debt.currentBalance * monthlyRate;
                 totalInterest += interest;
 

@@ -31,11 +31,12 @@ export interface Goal {
 }
 
 export interface Debt {
-    id: number; // Added ID for better management
+    id: number;
     name: string;
-    balance: number;
-    rate: number;
+    currentBalance: number;
+    interestRate: number;
     minPayment: number;
+    category?: string; // Optional category as suggested
 }
 
 export type TimeRange =

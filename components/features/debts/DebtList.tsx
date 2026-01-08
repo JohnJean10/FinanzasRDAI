@@ -28,11 +28,11 @@ export function DebtList({ debts }: { debts: Debt[] }) {
                             </div>
                             <div>
                                 <h4 className="font-bold text-slate-800 dark:text-white">{debt.name}</h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Tasa Anual: {debt.rate}%</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Tasa Anual: {debt.interestRate}%</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className="block font-bold text-xl text-slate-900 dark:text-white">{formatCurrency(debt.balance)}</span>
+                            <span className="block font-bold text-xl text-slate-900 dark:text-white">{formatCurrency(debt.currentBalance)}</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400">Mínimo: {formatCurrency(debt.minPayment)}</span>
                         </div>
                     </div>
@@ -40,7 +40,7 @@ export function DebtList({ debts }: { debts: Debt[] }) {
                     <div className="space-y-2">
                         <div className="flex justify-between text-xs text-slate-600 dark:text-slate-300">
                             <span>Progreso de Pago</span>
-                            <span>{Math.max(0, 100 - (debt.balance / 50000) * 100).toFixed(0)}% (Estimado)</span> {/* Mock max for proto */}
+                            <span>{Math.max(0, 100 - (debt.currentBalance / 50000) * 100).toFixed(0)}% (Estimado)</span> {/* Mock max for proto */}
                         </div>
                         <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             {/* Mock progress visualization */}

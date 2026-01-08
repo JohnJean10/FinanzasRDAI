@@ -12,13 +12,7 @@ import { debtEliminationEducation } from "@/lib/data/education-templates"
 import { formatCurrency } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 
-type Debt = {
-    id: number
-    name: string
-    balance: number
-    rate: number
-    minPayment: number
-}
+import { Debt } from "@/lib/types"
 
 interface DebtEliminationProps {
     initialDebts?: Debt[]
@@ -31,7 +25,7 @@ export function DebtElimination({ initialDebts = [] }: DebtEliminationProps) {
     const [strategy, setStrategy] = useState<'snowball' | 'avalanche'>('snowball')
 
     const addDebt = () => {
-        if (newDebt.name && newDebt.balance && newDebt.rate && newDebt.minPayment) {
+        if (newDebt.name && newDebt.currentBalance && newDebt.interestRate && newDebt.minPayment) {
             setDebts([...debts, { ...newDebt, id: Date.now() } as Debt])
             setNewDebt({})
         }
@@ -43,13 +37,13 @@ export function DebtElimination({ initialDebts = [] }: DebtEliminationProps) {
 
     const sortDebts = (debts: Debt[]) => {
         return [...debts].sort((a, b) => {
-            if (strategy === 'snowball') return a.balance - b.balance
-            return b.rate - a.rate
+            if (strategy === 'snowball') return a.currentBalance - b.currentBalance
+            return b.interestRate - a.interestRate
         })
     }
 
     const orderedDebts = sortDebts(debts)
-    const totalBalance = debts.reduce((sum, d) => sum + d.balance, 0)
+    const totalBalance = debts.reduce((sum, d) => sum + d.currentBalance, 0)
     const totalMinPayment = debts.reduce((sum, d) => sum + d.minPayment, 0)
 
     // Simple calculation for demo purposes (real calculation would require amortization schedule)
@@ -83,14 +77,14 @@ export function DebtElimination({ initialDebts = [] }: DebtEliminationProps) {
                             <Input
                                 type="number"
                                 placeholder="Saldo"
-                                value={newDebt.balance || ''}
-                                onChange={e => setNewDebt({ ...newDebt, balance: parseFloat(e.target.value) })}
+                                value={newDebt.currentBalance || ''}
+                                onChange={e => setNewDebt({ ...newDebt, currentBalance: parseFloat(e.target.value) })}
                             />
                             <Input
                                 type="number"
                                 placeholder="Tasa % Anual"
-                                value={newDebt.rate || ''}
-                                onChange={e => setNewDebt({ ...newDebt, rate: parseFloat(e.target.value) })}
+                                value={newDebt.interestRate || ''}
+                                onChange={e => setNewDebt({ ...newDebt, interestRate: parseFloat(e.target.value) })}
                             />
                             <Input
                                 type="number"
@@ -99,7 +93,7 @@ export function DebtElimination({ initialDebts = [] }: DebtEliminationProps) {
                                 onChange={e => setNewDebt({ ...newDebt, minPayment: parseFloat(e.target.value) })}
                             />
                         </div>
-                        <Button onClick={addDebt} className="w-full" disabled={!newDebt.name || !newDebt.balance}>
+                        <Button onClick={addDebt} className="w-full" disabled={!newDebt.name || !newDebt.currentBalance}>
                             <Plus className="mr-2 h-4 w-4" /> Agregar Deuda
                         </Button>
                     </div>
@@ -114,7 +108,7 @@ export function DebtElimination({ initialDebts = [] }: DebtEliminationProps) {
                                         <div>
                                             <p className="font-medium">{debt.name}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {formatCurrency(debt.balance)} • {debt.rate}%
+                                                {formatCurrency(debt.currentBalance)} • {debt.interestRate}%
                                             </p>
                                         </div>
                                     </div>

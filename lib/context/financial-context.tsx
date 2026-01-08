@@ -39,6 +39,10 @@ interface FinancialContextType extends AppData {
     updateBudget: (category: string, limit: number) => void;
     addNotification: (n: Notification) => void;
     markNotificationRead: (id: string) => void;
+    // Debts
+    addDebt: (debt: Omit<Debt, 'id'>) => void;
+    deleteDebt: (id: number) => void;
+    payDebt: (id: number, amount: number) => void;
     isTransactionModalOpen: boolean;
     openTransactionModal: () => void;
     closeTransactionModal: () => void;
@@ -333,6 +337,28 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         }));
     };
 
+    // --- DEBT MANAGEMENT ---
+    const addDebt = (debt: Omit<Debt, 'id'>) => {
+        const newDebt = { ...debt, id: Date.now() } as Debt;
+        setData(prev => ({ ...prev, debts: [...prev.debts, newDebt] }));
+    };
+
+    const deleteDebt = (id: number) => {
+        setData(prev => ({ ...prev, debts: prev.debts.filter(d => d.id !== id) }));
+    };
+
+    const payDebt = (id: number, amount: number) => {
+        setData(prev => ({
+            ...prev,
+            debts: prev.debts.map(d => {
+                if (d.id === id) {
+                    return { ...d, currentBalance: Math.max(0, d.currentBalance - amount) };
+                }
+                return d;
+            })
+        }));
+    };
+
     const updateUser = (u: Partial<AppData['user']>) => {
         setData(prev => ({ ...prev, user: { ...prev.user, ...u } }));
     };
@@ -407,7 +433,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             closeTransactionModal,
             timeRange,
             setTimeRange,
-            metrics
+            metrics,
+            addDebt,
+            deleteDebt,
+            payDebt
         }}>
             {children}
         </FinancialContext.Provider>
