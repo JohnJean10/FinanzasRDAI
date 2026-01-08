@@ -197,4 +197,3 @@ Recordá: El objetivo es que cada usuario termine la conversación sintiendo que
         );
     }
 }
-```
