@@ -184,11 +184,17 @@ Recordá: El objetivo es que cada usuario termine la conversación sintiendo que
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No pude generar una respuesta.";
 
         return NextResponse.json({ response: text });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error calling Gemini API:", error);
+
+        // Extract detailed error info
+        const errorMessage = error.message || error.toString();
+        const errorDetails = error.response ? JSON.stringify(error.response) : '';
+
         return NextResponse.json(
-            { error: "Failed to generate response" },
+            { error: `Gemini API Fail: ${errorMessage} ${errorDetails}` },
             { status: 500 }
         );
     }
 }
+```
