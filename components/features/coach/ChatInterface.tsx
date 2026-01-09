@@ -11,10 +11,17 @@ interface Message {
     text: string;
     sender: 'user' | 'ai';
     timestamp: string;
+    action?: ActionCommand; // NEW
+    actionExecuted?: boolean; // NEW
+}
+
+interface ActionCommand {
+    type: string;
+    payload: any;
 }
 
 export function ChatInterface() {
-    const { user, transactions, debts, metrics } = useFinancial();
+    const { user, transactions, debts, metrics, addTransaction } = useFinancial(); // IMPORT addTransaction
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -91,6 +98,17 @@ export function ChatInterface() {
                 timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
             };
 
+            // Parse for Actions
+            const actionMatch = data.response.match(/\[ACTION: (.*)\]/s);
+            if (actionMatch) {
+                try {
+                    const actionData = JSON.parse(actionMatch[1]);
+                    aiMsg.action = actionData;
+                } catch (e) {
+                    console.error("Failed to parse AI action:", e);
+                }
+            }
+
             setMessages(prev => [...prev, aiMsg]);
         } catch (error: any) {
             console.error(error);
@@ -104,6 +122,23 @@ export function ChatInterface() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // --- ACTION HANDLERS ---
+    const handleExecuteAction = (msgId: string, action: ActionCommand) => {
+        if (action.type === 'ADD_TRANSACTION') {
+            addTransaction({
+                ...action.payload,
+                date: new Date().toISOString() // Ensure fresh date or use payload date
+            });
+
+            // Update message state
+            setMessages(prev => prev.map(m => m.id === msgId ? { ...m, actionExecuted: true } : m));
+        }
+    };
+
+    const handleCancelAction = (msgId: string) => {
+        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, action: undefined } : m));
     };
 
     // Generate dynamic suggestions based on data
@@ -235,14 +270,48 @@ export function ChatInterface() {
                                             li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
                                             p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
                                             strong: ({ node, ...props }) => <strong className="font-bold text-emerald-600 dark:text-emerald-400" {...props} />,
-                                            table: ({ node, ...props }) => <div className="overflow-x-auto my-2"><table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-xs" {...props} /></div>,
-                                            thead: ({ node, ...props }) => <thead className="bg-slate-50 dark:bg-slate-900/50" {...props} />,
-                                            th: ({ node, ...props }) => <th className="px-3 py-2 text-left font-medium text-slate-500 uppercase tracking-wider" {...props} />,
-                                            td: ({ node, ...props }) => <td className="px-3 py-2 whitespace-nowrap" {...props} />,
                                         }}
                                     >
-                                        {msg.text}
+                                        {msg.text.replace(/\[ACTION:.*\]/s, '') /* Hide raw JSON from view */}
                                     </ReactMarkdown>
+
+                                    {/* Action Confirmation Card */}
+                                    {msg.action && !msg.actionExecuted && (
+                                        <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                            <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                                                Acción Sugerida
+                                            </p>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <p className="font-bold text-slate-800 dark:text-white">
+                                                        {msg.action.payload.category === 'income' ? 'Ingreso' : 'Gasto'} de {formatCurrency(msg.action.payload.amount)}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 capitalize">{msg.action.payload.description} • {msg.action.payload.category}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleExecuteAction(msg.id, msg.action!)}
+                                                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-1.5 px-3 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                                                >
+                                                    ✅ Confirmar
+                                                </button>
+                                                <button
+                                                    onClick={() => handleCancelAction(msg.id)}
+                                                    className="flex-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-300 py-1.5 px-3 rounded-lg text-xs font-bold transition-colors"
+                                                >
+                                                    ❌ Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Action Result Feedback */}
+                                    {msg.actionExecuted && (
+                                        <div className="mt-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-lg flex items-center gap-2">
+                                            <span>✅ Acción realizada con éxito</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
