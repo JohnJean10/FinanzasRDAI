@@ -59,6 +59,8 @@ interface FinancialContextType extends AppData {
         monthlyBurnRate: number;
         totalSavings: number;     // NUEVO: Suma de lo ahorrado en metas
         totalGoalsTarget: number; // NUEVO: Suma de los objetivos de metas
+        totalAssets: number;      // NUEVO: Total Assets (Historical Balance)
+        totalDebt: number;        // NUEVO: Total Debt Balance
     };
 }
 
@@ -183,7 +185,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             totalSavings,
             totalGoalsTarget,
             savingsRate,
-            monthlyBurnRate: periodMetrics.expense
+
+            monthlyBurnRate: periodMetrics.expense,
+            totalAssets: historicalBalance, // In this simple model, cash balance = assets
+            totalDebt: data.debts.reduce((sum, d) => sum + d.currentBalance, 0) // Sum of all debt balances
         };
 
     }, [data.transactions, data.goals, timeRange]);
