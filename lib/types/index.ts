@@ -28,6 +28,7 @@ export interface Goal {
     monthlyContribution?: number; // Calculated monthly amount needed
     isLinkedToBudget?: boolean; // Toggle to reserve this amount in budget
     isNative?: boolean; // System goal (e.g., Emergency Fund)
+    priority?: 'alta' | 'media' | 'baja';
 }
 // Deudas y Pasivos
 export type DebtType = 'credit_card' | 'loan' | 'informal'; // Tarjeta, Préstamo, Prestamista
