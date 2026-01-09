@@ -371,7 +371,7 @@ SIEMPRE ENVUELVE EL JSON EN [ACTION: ...].
                                                     <p className="font-bold text-slate-800 dark:text-white">
                                                         {msg.action.type === 'PAY_DEBT' ? 'Pago de Deuda' :
                                                             msg.action.payload?.category === 'ahorro' ? 'Ahorro/Inversión' :
-                                                                msg.action.payload?.category === 'income' ? 'Ingreso' : 'Gasto'}
+                                                                msg.action.payload?.type === 'income' ? 'Ingreso' : 'Gasto'}
                                                         {' '}de {formatCurrency(msg.action.payload?.amount || 0)}
                                                     </p>
                                                     <p className="text-xs text-slate-500 capitalize">
