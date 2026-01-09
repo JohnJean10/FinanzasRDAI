@@ -5,13 +5,12 @@
 @layer base {
   :root {
     /* MODO CLARO (Light Mode) */
-    --background: 210 40% 98%;
-    /* Slate 50 (Fondo suave para contraste) */
+    --background: 0 0% 100%;
+    /* Blanco puro */
     --foreground: 222.2 84% 4.9%;
-    /* Slate 950 */
+    /* Slate 950 (Texto principal) */
 
     --card: 0 0% 100%;
-    /* Blanco puro para tarjetas */
     --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
