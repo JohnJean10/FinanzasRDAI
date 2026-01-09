@@ -26,7 +26,7 @@ export function CoachSummaryWidget() {
 
     // Find top spending category
     const categoryTotals = currentTransactions
-        .filter(t => t.type === 'expense')
+        .filter(t => t.type === 'expense' && t.category !== 'ahorro')
         .reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
