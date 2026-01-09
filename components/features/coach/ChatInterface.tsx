@@ -72,12 +72,42 @@ export function ChatInterface() {
                 ingresosMensuales: formatCurrency(user.monthlyIncome)
             };
 
+            // 1. Calculations
+            const totalDebt = debts.reduce((sum, d) => sum + d.currentBalance, 0);
+            const income = user.monthlyIncome;
+            const available = metrics.availableBalance;
+            const worstDebt = debts.sort((a, b) => b.interestRate - a.interestRate)[0];
+
+            // 2. Dynamic System Prompt
+            const generateSystemPrompt = () => `
+ERES: FinanzasRD AI, coach financiero dominicano, experto pero 'de calle'.
+OBJETIVO: Ayudar al usuario a progresar financieramente.
+
+CONTEXTO CLAVE (YA LO SABES, NO LO REPITAS):
+- Deuda Total: ${formatCurrency(totalDebt)}
+- Ingreso Mensual: ${formatCurrency(income)}
+- Disponible Real: ${formatCurrency(available)}
+- Peor Deuda: ${worstDebt ? `${worstDebt.name} (${worstDebt.interestRate}%)` : 'Ninguna'}
+
+REGLAS DE PERSONALIDAD ESTRICTAS:
+1. **BREVEDAD EXTREMA**: Tus respuestas deben ser de MÁXIMO 2 o 3 oraciones.
+2. **SILENCIO DE CONTEXTO**: NUNCA saludes diciendo "Veo que ganas X". Úsalo solo para juzgar.
+3. **TONO DOMINICANO MODERADO**: Usa jerga ('manito', 'lío', 'olla') pero mantén autoridad.
+4. **REACTIVIDAD**: Si pregunto "¿Puedo gastar?", responde SÍ o NO rotundo basándote en el disponible y las deudas.
+5. **CERO LISTAS**: No uses bullet points a menos que te lo pidan explícitamente.
+
+PROTOCOLO DE ACCIÓN:
+Si detectas una intención clara de acción (gasto/ahorro), responde con una frase corta y el bloque JSON [ACTION:...].
+Si es AHORRO, usa category='ahorro' y type='expense'.
+`;
+
             // Secure Backend Call
             const response = await fetch('/api/gemini', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: userMsg.text,
+                    systemInstruction: generateSystemPrompt(), // NEW: Dynamic Prompt
                     context: {
                         userProfile: user,
                         financialSnapshot: contextSummary
