@@ -1,146 +1,311 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Bell, ShieldAlert, TrendingUp, Wallet } from 'lucide-react'
-import { useFinancial } from "@/lib/context/financial-context"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { useFinancial } from "@/lib/context/financial-context";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Bell, ShieldAlert, TrendingUp, Wallet, CheckCircle2, Bot } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
 
 export default function OnboardingWizard() {
-    const [step, setStep] = useState(1)
-    const [profile, setProfile] = useState<'deudas' | 'inversion' | null>(null)
+    const { updateUser, addGoal, addTransaction } = useFinancial();
+    const router = useRouter();
+    const [step, setStep] = useState(0);
 
-    const { updateUser } = useFinancial()
-    const router = useRouter()
+    const [formData, setFormData] = useState({
+        name: "",
+        currency: "DOP",
+        incomeAmount: "",
+        incomeFrequency: "quincenal",
+        fixedExpenses: "",
+        profileType: "", // 'deudas' | 'inversion' (Tu lógica)
+        emergencyGoal: ""
+    });
 
-    const handleFinish = () => {
-        // Guardar perfilado (podríamos añadir esto al contexto luego)
-        console.log('Perfil seleccionado:', profile);
+    // --- CÁLCULOS MATEMÁTICOS (El Cerebro) ---
+    const calculateMonthlyIncome = () => {
+        const amount = parseFloat(formData.incomeAmount) || 0;
+        return formData.incomeFrequency === 'quincenal' ? amount * 2 : amount;
+    };
 
-        // Completar onboarding básico
+    const calculateMonthlyExpenses = () => {
+        return parseFloat(formData.fixedExpenses) || 0;
+    };
+
+    const calculateSavingsCapacity = () => {
+        return calculateMonthlyIncome() - calculateMonthlyExpenses();
+    };
+
+    const handleNext = () => {
+        if (step === steps.length - 1) {
+            completeOnboarding();
+        } else {
+            setStep(step + 1);
+        }
+    };
+
+    const completeOnboarding = () => {
+        const monthlyIncome = calculateMonthlyIncome();
+        const monthlyExpenses = calculateMonthlyExpenses();
+
+        // 1. Guardar Perfil y Preferencias
         updateUser({
+            name: formData.name,
+            monthlyIncome: monthlyIncome,
+            currency: formData.currency as 'DOP' | 'USD',
             hasCompletedOnboarding: true,
-            // Defaults seguros para evitar errores en dashboard
-            name: 'Líder',
-            monthlyIncome: 0,
-            currency: 'DOP'
+            // Aquí podríamos guardar el profileType en el futuro
         });
 
-        router.push('/dashboard');
-    }
+        // 2. Registrar Ingreso Inicial
+        addTransaction({
+            type: 'income',
+            amount: parseFloat(formData.incomeAmount),
+            category: 'ingreso_sueldo',
+            description: `Nómina (${formData.incomeFrequency})`,
+            date: new Date().toISOString().split('T')[0],
+            account: 'general'
+        });
 
-    // FRENTE 1: El Hook (Bienvenida con personalidad)
-    const renderStep1 = () => (
-        <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-full">
-                <span className="text-4xl">🤖</span>
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                ¡Dímelo líder!
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">
-                Soy tu nuevo asesor financiero. No soy un banco, así que no te voy a vender tarjetas.
-                Vine a que hablemos claro de tus cuartos.
-            </p>
-            <button
-                onClick={() => setStep(2)}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-all"
-            >
-                Vamos al mambo
-            </button>
-        </div>
-    )
+        // 3. Crear Meta (El Clavo)
+        const suggestedTarget = monthlyExpenses > 0 ? monthlyExpenses * 3 : monthlyIncome * 3;
+        const finalTarget = parseFloat(formData.emergencyGoal) || suggestedTarget;
 
-    // FRENTE 2: Perfilado Inteligente (La bifurcación)
-    const renderStep2 = () => (
-        <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-right-8">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                Para empezar, sé sincero conmigo...
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400">
-                ¿Cuál es tu realidad ahora mismo? Esto define cómo te voy a aconsejar.
-            </p>
+        addGoal({
+            name: 'Fondo de Emergencia (El Clavo)',
+            target: finalTarget,
+            current: 0,
+            deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+            icon: '🛡️',
+            priority: 'alta'
+        });
 
-            <div className="grid gap-4">
-                {/* Opción A: Deudas (Modo Bola de Nieve) */}
-                <button
-                    onClick={() => { setProfile('deudas'); setStep(3); }}
-                    className="flex items-center p-4 border-2 border-slate-200 dark:border-slate-800 rounded-xl hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all text-left group"
-                >
-                    <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-full mr-4 group-hover:bg-red-200 dark:group-hover:bg-red-800">
-                        <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                        <span className="block font-bold text-slate-900 dark:text-white">Tengo un lío de deudas</span>
-                        <span className="text-sm text-slate-500 dark:text-slate-400">Necesito organizar mis pagos y salir de esto rápido.</span>
-                    </div>
-                </button>
+        // 4. RUTEO INTELIGENTE (Tu Lógica de Bifurcación)
+        // Si tiene líos, lo mandamos directo a configurar las deudas.
+        if (formData.profileType === 'deudas') {
+            router.push('/debts');
+        } else {
+            router.push('/dashboard');
+        }
+    };
 
-                {/* Opción B: Inversión/Gasto (Modo Psicológico) */}
-                <button
-                    onClick={() => { setProfile('inversion'); setStep(3); }}
-                    className="flex items-center p-4 border-2 border-slate-200 dark:border-slate-800 rounded-xl hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all text-left group"
-                >
-                    <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full mr-4 group-hover:bg-green-200 dark:group-hover:bg-green-800">
-                        <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+    // --- PASOS DEL WIZARD (Tu Personalidad + Mi Data) ---
+    const steps = [
+        {
+            // PASO 1: LA BIENVENIDA (Tu Texto)
+            icon: Bot,
+            title: "¡Dímelo líder! 🤖",
+            subtitle: "Soy tu nuevo asesor financiero. No soy un banco, así que no te voy a vender tarjetas. Vine a que hablemos claro de tus cuartos.",
+            content: (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="space-y-2">
+                        <Label>¿Cómo te llamas?</Label>
+                        <Input
+                            placeholder="Tu nombre aquí..."
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="text-lg py-6"
+                            autoFocus
+                        />
                     </div>
-                    <div>
-                        <span className="block font-bold text-slate-900 dark:text-white">Estoy "limpio", quiero crecer</span>
-                        <span className="text-sm text-slate-500 dark:text-slate-400">Quiero invertir o saber si puedo darme un gusto sin culpa.</span>
+                    <div className="space-y-2">
+                        <Label>Moneda</Label>
+                        <Select
+                            value={formData.currency}
+                            onValueChange={(v) => setFormData({ ...formData, currency: v })}
+                        >
+                            <SelectTrigger className="py-6"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="DOP">🇩🇴 Peso (DOP)</SelectItem>
+                                <SelectItem value="USD">🇺🇸 Dólar (USD)</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
-                </button>
-            </div>
-        </div>
-    )
-
-    // FRENTE 3: Permisos (Sinceridad total)
-    const renderStep3 = () => (
-        <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-right-8">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                Una última cosa, sin rodeos
-            </h2>
-            <div className="space-y-4 text-slate-600 dark:text-slate-400">
-                <p>
-                    Para que esto funcione, necesito que me des luz verde con las notificaciones.
-                </p>
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-start mb-2">
-                        <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 mt-1" />
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">¿Para qué?</p>
-                    </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        No es para molestarte. Es para avisarte 2 días antes de que el banco te cobre mora.
-                        Si se te pasa la fecha, pierdes dinero, y mi trabajo es que no pierdas.
-                    </p>
                 </div>
-            </div>
+            )
+        },
+        {
+            // PASO 2: EL PERFILADO (Tu bifurcación visual)
+            icon: ShieldAlert, // Usamos un icono genérico aquí, cambiaremos dinámicamente
+            title: "Sé sincero conmigo...",
+            subtitle: "¿Cuál es tu realidad ahora mismo? Esto define cómo te voy a aconsejar.",
+            content: (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Opción A: Deudas (Tu diseño) */}
+                    <div
+                        onClick={() => setFormData({ ...formData, profileType: 'deudas' })}
+                        className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all group ${formData.profileType === 'deudas'
+                                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                                : 'border-slate-200 dark:border-slate-800 hover:border-red-300'
+                            }`}
+                    >
+                        <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full mr-4">
+                            <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div>
+                            <span className="block font-bold text-slate-900 dark:text-white">Tengo un lío de deudas</span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Necesito organizar mis pagos y salir de esto rápido.</span>
+                        </div>
+                    </div>
 
-            <button
-                onClick={handleFinish}
-                className="w-full bg-slate-900 dark:bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-slate-200 dark:shadow-blue-900/20"
-            >
-                Dale, activalo
-            </button>
+                    {/* Opción B: Inversión (Tu diseño) */}
+                    <div
+                        onClick={() => setFormData({ ...formData, profileType: 'inversion' })}
+                        className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all group ${formData.profileType === 'inversion'
+                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
+                                : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300'
+                            }`}
+                    >
+                        <div className="p-3 bg-emerald-100 dark:bg-emerald-900 rounded-full mr-4">
+                            <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                            <span className="block font-bold text-slate-900 dark:text-white">Estoy "limpio", quiero crecer</span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Quiero invertir o saber si puedo darme un gusto.</span>
+                        </div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            // PASO 3: LA DATA DURA (Necesaria para que la app funcione)
+            icon: Wallet,
+            title: "Hablemos de Cuartos 💸",
+            subtitle: "Para armar tu estrategia, necesito los números crudos.",
+            content: (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2 col-span-2 md:col-span-1">
+                            <Label>¿Cuánto cobras?</Label>
+                            <Input
+                                type="number"
+                                className="py-6 text-lg"
+                                placeholder="0.00"
+                                value={formData.incomeAmount}
+                                onChange={(e) => setFormData({ ...formData, incomeAmount: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2 col-span-2 md:col-span-1">
+                            <Label>¿Frecuencia?</Label>
+                            <Select
+                                value={formData.incomeFrequency}
+                                onValueChange={(v) => setFormData({ ...formData, incomeFrequency: v })}
+                            >
+                                <SelectTrigger className="py-6"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="quincenal">Quincenal (x2)</SelectItem>
+                                    <SelectItem value="mensual">Mensual (x1)</SelectItem>
+                                    <SelectItem value="semanal">Semanal (x4)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
 
-            <button onClick={handleFinish} className="w-full py-3 text-slate-400 text-sm hover:text-slate-600 dark:hover:text-slate-200">
-                Ahora no, prefiero arriesgarme
-            </button>
-        </div>
-    )
+                    <div className="space-y-2">
+                        <Label>¿Cuánto se te va OBLIGADO en gastos fijos?</Label>
+                        <Input
+                            type="number"
+                            className="py-6 text-lg"
+                            placeholder="Casa, luz, comida..."
+                            value={formData.fixedExpenses}
+                            onChange={(e) => setFormData({ ...formData, fixedExpenses: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">Sé sincero, esto es para calcular tu capacidad real.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            // PASO 4: PERMISOS (Tu idea de transparencia)
+            icon: Bell,
+            title: "Una última cosa, sin rodeos",
+            subtitle: "Para que esto funcione, necesito que me des luz verde.",
+            content: (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-start mb-2">
+                            <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 mt-1" />
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">¿Para qué las notificaciones?</p>
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                            No es para molestarte. Es para avisarte <b>2 días antes</b> de que el banco te cobre mora o el prestamista te llame.
+                            Si se te pasa la fecha, pierdes dinero, y mi trabajo es que no pierdas.
+                        </p>
+                    </div>
+
+                    {/* Resumen Final antes de arrancar */}
+                    <div className="text-center p-4">
+                        <p className="text-sm text-muted-foreground mb-1">Tu Capacidad de Ahorro estimada:</p>
+                        <p className={`text-2xl font-bold ${calculateSavingsCapacity() > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {formatCurrency(calculateSavingsCapacity())} / mes
+                        </p>
+                    </div>
+                </div>
+            )
+        }
+    ];
+
+    const CurrentStep = steps[step];
+    // Icono dinámico para el paso 2
+    const StepIcon = step === 1 && formData.profileType === 'deudas' ? ShieldAlert : (step === 1 && formData.profileType === 'inversion' ? TrendingUp : CurrentStep.icon);
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-6">
-            <div className="w-full max-w-md">
-                {step === 1 && renderStep1()}
-                {step === 2 && renderStep2()}
-                {step === 3 && renderStep3()}
-
-                {/* Indicador de progreso simple */}
-                <div className="flex justify-center mt-8 space-x-2">
-                    <div className={`h-1 w-8 rounded ${step >= 1 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
-                    <div className={`h-1 w-8 rounded ${step >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
-                    <div className={`h-1 w-8 rounded ${step >= 3 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-xl p-8 border border-slate-200 dark:border-slate-800 transition-all duration-300">
+                {/* Progress Dots */}
+                <div className="flex gap-2 mb-8 justify-center">
+                    {steps.map((_, i) => (
+                        <div
+                            key={i}
+                            className={`h-2 w-2 rounded-full transition-all duration-300 ${i === step ? 'bg-blue-600 w-6' : (i < step ? 'bg-blue-400' : 'bg-slate-200 dark:bg-slate-800')
+                                }`}
+                        />
+                    ))}
                 </div>
+
+                {/* Header */}
+                <div className="mb-8 text-center animate-in zoom-in-95 duration-300">
+                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600 dark:text-blue-400 shadow-sm">
+                        <StepIcon size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{CurrentStep.title}</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+                        {CurrentStep.subtitle}
+                    </p>
+                </div>
+
+                {/* Content */}
+                <div className="mb-8 min-h-[220px]">
+                    {CurrentStep.content}
+                </div>
+
+                {/* Actions */}
+                <Button
+                    onClick={handleNext}
+                    disabled={
+                        (step === 0 && !formData.name) ||
+                        (step === 1 && !formData.profileType) ||
+                        (step === 2 && (!formData.incomeAmount || !formData.fixedExpenses))
+                    }
+                    className="w-full py-6 text-lg rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02]"
+                    size="lg"
+                >
+                    {step === steps.length - 1 ? 'Dale, actívalo 🚀' : 'Vamos al mambo'} <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+
+                {step > 0 && (
+                    <button
+                        onClick={() => setStep(step - 1)}
+                        className="w-full mt-4 text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                    >
+                        Volver atrás
+                    </button>
+                )}
             </div>
         </div>
-    )
+    );
 }
