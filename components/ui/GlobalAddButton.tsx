@@ -2,9 +2,16 @@
 
 import { Plus } from "lucide-react";
 import { useFinancial } from "@/lib/context/financial-context";
+import { usePathname } from "next/navigation";
 
 export function GlobalAddButton() {
     const { openTransactionModal } = useFinancial();
+    const pathname = usePathname();
+
+    // Hide on specific pages where context/coach handles actions
+    if (pathname?.startsWith('/coach') || pathname?.startsWith('/onboarding')) {
+        return null;
+    }
 
     return (
         <button
