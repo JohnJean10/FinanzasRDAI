@@ -1,0 +1,111 @@
+🏦 FinanzasRD AI – Hoja de Ruta Maestra (v3.1 - Benchmark Enhanced)
+Misión: Democratizar la salud financiera en República Dominicana mediante IA, adaptada a nuestra cultura ("fiao", doble moneda, remesas) y superando los errores de los gigantes globales. Estado: Beta Avanzada. Tecnología: Next.js 16 + Gemini 2.0 Flash + Tailwind (shadcn/ui).
+
+📅 FASE 1: "Cero Fricción" (Prioridad Inmediata)
+Objetivo: Que el usuario nuevo entienda la app en 5 segundos y registre gastos en 3 segundos.
+
+1.1. Modo Demo (Onboarding Mágico)
+Lección de Mercado: Evitar el "síndrome de la hoja en blanco" que mata la retención en apps nuevas.
+
+Implementación: Al terminar el registro, preguntar: "¿Quieres cargar datos de ejemplo?". Inyectar un JSON con transacciones, metas y deudas simuladas para vender el valor visual al instante.
+
+Estado: ⬜ Pendiente (Alta Prioridad).
+
+1.2. Captura Inteligente (Robustez vs. APIs)
+Lección de Wallet: Las APIs bancarias fallan constantemente.
+
+Solución Híbrida:
+
+OCR de Recibos: Foto a la factura -> Gemini extrae datos.
+
+Parsing de Notificaciones (La Clave): Procesar copy-paste de SMS/Emails bancarios (Popular/BHD). Es más estable que depender de conexiones bancarias directas.
+
+Estado: ⬜ Pendiente (Integración de visión en route.ts).
+
+1.3. Entrada Rápida (Quick Actions)
+Lección de Reviews: "Si tardo más de 10 segundos, no lo uso".
+
+Solución: Botón flotante (+) accesible siempre. Sugerencias predictivas por hora/lugar ("Sueles gastar $150 en Cafetería a esta hora").
+
+Estado: 🟨 En Progreso.
+
+🧠 FASE 2: Lógica Financiera "A Prueba de Balas"
+Objetivo: Mecánicas financieras profundas que eduquen pasivamente.
+
+2.1. Módulo "Wallet" & Multimoneda Real
+Estructura: Cuentas Múltiples (Nómina, Crédito, Efectivo) con saldos independientes en DOP y USD (Vital para economía dominicana).
+
+Estado: ⬜ Pendiente.
+
+2.2. Mecánica "Offset de Tarjeta" (Inspired by YNAB) ⭐ NUEVO
+El Problema: La gente cree que pagar con tarjeta es "gratis" hasta que llega el corte.
+
+La Solución: Cuando registras un gasto de RD$1,000 en Comida con Tarjeta de Crédito, la app mueve automáticamente RD$1,000 de tu "Disponible" a una categoría reservada "Pago de Tarjeta".
+
+Resultado: Cuando llega la fecha de pago, el dinero siempre está ahí. Adiós intereses.
+
+Estado: ⬜ Pendiente (Lógica compleja, alto valor).
+
+2.3. Contabilidad Mental (KPIs)
+KPIs:
+
+Disponible para Usar: (Balance Total - Ahorros). Evita la falsa sensación de riqueza.
+
+Relación Ingresos-Gastos: Métrica técnica de salud financiera.
+
+Estado: 🟨 Definido (Código listo).
+
+2.4. Motor de Automatización
+Funcionalidad: Detectar suscripciones y generar transacciones pendientes automáticamente (Netflix, Spotify, Casa).
+
+Estado: 🟧 En corrección.
+
+🎨 FASE 3: Engagement y Cultura Visual
+Objetivo: Que la app sea un aliado visual, no una hoja de cálculo.
+
+3.1. Calendario Financiero (Inspired by Bluecoins) ⭐ NUEVO
+Lección de Reviews: Las listas son aburridas; la gente piensa en semanas.
+
+Solución: Vista de Calendario donde se ve:
+
+🟢 Día 15/30: Entra Sueldo.
+
+🔴 Día 18: Corte de Tarjeta (Alerta Visual).
+
+Permite prever: "Uy, el día 20 voy a estar en rojo antes de cobrar".
+
+Estado: ⬜ Pendiente (Nuevo componente UI).
+
+3.2. Gamificación de Metas
+Funcionalidad: Barras de progreso y Celebraciones (Confeti) al alcanzar hitos.
+
+Estado: 🟨 Parcial.
+
+3.3. Modo Pareja / Compartido (Inspired by Honeydue) ⭐ NUEVO
+Contexto RD: Finanzas en pareja o gestión de gastos familiares.
+
+Implementación: Etiquetas compartidas ("Gastos Casa"). El Coach analiza: "Entre tú y Juana ya consumieron el 80% del súper".
+
+Estado: ⬜ Pendiente (Fase conceptual).
+
+3.4. Coach "Aliado, no Juez" (Psicología Positiva)
+Lección de Reviews: Los usuarios odian las apps que los regañan con rojo.
+
+Implementación: Ajustar el Prompt del Sistema. En lugar de "¡Te pasaste!", decir: "Ajuste necesario: Te excediste en Salidas, ¿movemos fondos de Ocio para cubrirlo?".
+
+Estado: 🟧 En proceso continuo.
+
+🛠️ FASE 4: Profundidad Técnica
+Objetivo: Calidad de software empresarial.
+
+4.1. Reportes Profesionales (PDF)
+Funcionalidad: Generar reporte mensual elegante para imprimir/enviar.
+
+Estado: ⬜ Pendiente.
+
+4.2. Modo Offline (Offline-First)
+Funcionalidad: Persistencia local robusta (localStorage/IndexedDB). La app funciona en el campo sin señal y sincroniza al volver.
+
+Estado: ⬜ Pendiente (Reto técnico alto).
+
+Con esto, tenemos un plan que cubre las necesidades básicas (Fricción), la educación financiera real (Offset de Tarjeta) y la retención emocional (Gamificación/Coach Aliado).

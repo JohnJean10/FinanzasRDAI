@@ -1,0 +1,126 @@
+🏦 FinanzasRD AI – Hoja de Ruta Maestra (v3.0)
+Misión: Democratizar la salud financiera en República Dominicana mediante IA, adaptada a nuestra cultura ("fiao", doble moneda, remesas). Estado: Beta Avanzada. Tecnología: Next.js 16 + Gemini 2.0 Flash + Tailwind (shadcn/ui).
+
+📅 FASE 1: "Cero Fricción" (Prioridad Inmediata)
+Objetivo: Que el usuario nuevo entienda la app en 5 segundos y registre gastos en 3 segundos.
+
+1.1. Modo Demo (Onboarding Mágico) [Origen: Informe]
+Problema: El usuario nuevo ve la app vacía y triste. Se aburre.
+
+Solución: Al terminar el registro, preguntar: "¿Quieres cargar datos de ejemplo?".
+
+Implementación: Inyectar un JSON con transacciones de los últimos 3 meses, 2 metas (ej: "Fondo de Emergencia") y 1 deuda simulada.
+
+Estado: ⬜ Pendiente (Alta Prioridad).
+
+1.2. Captura Inteligente & OCR [Origen: Conversación]
+Problema: Escribir a mano da pereza.
+
+Solución:
+
+Escaneo de Recibos: Foto a la factura -> Gemini extrae monto, fecha, comercio y NCF.
+
+Parsing de Notificaciones: Pegar el SMS/Email del Banco Popular/BHD -> Gemini crea la transacción.
+
+Estado: ⬜ Pendiente (Requiere integración de visión en route.ts).
+
+1.3. Entrada Rápida (Quick Actions) [Origen: Informe]
+Problema: Demasiados clics para comprar un café.
+
+Solución: Botón flotante (+) accesible siempre. Sugerencias predictivas ("Sueles gastar $150 en Cafetería a esta hora").
+
+Estado: 🟨 En Progreso (Botón existe, falta la inteligencia predictiva).
+
+🧠 FASE 2: Lógica Financiera Robusta (Core)
+Objetivo: Que la app piense como un financiero experto, no como una calculadora.
+
+2.1. Módulo "Wallet" (Cuentas Reales) [Origen: Conversación]
+Cambio: Dejar de tratar el dinero como una bolsa única.
+
+Estructura:
+
+Soporte para Cuentas Múltiples: "BHD Nómina", "Popular Crédito", "Efectivo".
+
+Multimoneda Real: Saldos independientes en DOP y USD.
+
+Estado: ⬜ Pendiente (Requiere refactor de Transaction para incluir accountId).
+
+2.2. Motor de Automatización & Recurrencia [Origen: Fix Reciente]
+Funcionalidad: Detectar suscripciones y generar transacciones pendientes automáticamente si el usuario no entra en un mes.
+
+Estado: 🟧 En corrección (Lógica de processRecurringTransactions ajustada, falta validar en producción).
+
+2.3. Contabilidad Mental (KPIs) [Origen: Conversación]
+Cambio: Diferenciar "Dinero en Banco" vs "Dinero Disponible".
+
+KPIs Nuevos:
+
+Disponible para Usar: (Balance Total - Metas de Ahorro).
+
+Relación Ingresos-Gastos: (Antes llamada "% Ahorro").
+
+Estado: 🟨 Definido (Código de KPIGrid listo para implementar).
+
+2.4. Niveles de Experiencia (Modos) [Origen: Conversación]
+Concepto: Adaptar la UI y el Coach según el usuario.
+
+Novato: UI Simple, Coach Educativo.
+
+Constructor: UI Balanceada, foco en Deuda.
+
+Estratega: UI Densa, foco en Inversión/Patrimonio.
+
+Estado: ⬜ Pendiente.
+
+🎨 FASE 3: Engagement y Cultura Local
+Objetivo: Que el usuario ame usar la app y sienta que es "Dominicana".
+
+3.1. Gamificación de Metas [Origen: Informe/Conversación]
+Funcionalidad: Barras de progreso visuales para las metas.
+
+Efecto "Wow": Lluvia de confeti al llegar al 25%, 50% y 100% de la meta.
+
+Estado: 🟨 Parcial (Barras implementadas, falta confeti).
+
+3.2. Biblioteca Financiera RD [Origen: Informe]
+Contenido: Artículos estáticos integrados sobre:
+
+¿Cómo funcionan las AFPs en RD?
+
+Seguro Familiar de Salud (SFS).
+
+Comparativa de Préstamos (Tasas de referencia).
+
+Estado: ⬜ Pendiente.
+
+3.3. Personalización del Coach IA [Origen: Informe]
+Mejora: Ajustar el System Prompt para que hable con jerga local moderada y entienda contextos como "Doble Sueldo" (Navidad) o "Escolaridad" (Agosto).
+
+Estado: 🟧 En proceso continuo.
+
+🛠️ FASE 4: Profundidad Técnica (Largo Plazo)
+4.1. Reportes Profesionales
+Funcionalidad: Exportación a PDF bien maquetado (para imprimir/enviar).
+
+Estado: ⬜ Pendiente (Ya tenemos Excel).
+
+4.2. Modo Offline (Offline-First) [Origen: Informe]
+Funcionalidad: Que la app funcione 100% sin internet (guardando en localStorage) y sincronice cuando vuelva la conexión. Vital para zonas con mala cobertura.
+
+Estado: ⬜ Pendiente (Reto técnico alto).
+
+4.3. Calculadora de Deudas Avanzada
+Funcionalidad: Simulador visual "Bola de Nieve vs Avalancha".
+
+Estado: ✅ Existente (Solo falta mejorar su visibilidad en la UI).
+
+📋 Resumen de Estructura de Datos (Nueva)
+Para soportar todo esto, esta es la estructura de tipos aprobada:
+
+TypeScript
+
+// Core Types
+interface Account { id: string; name: string; type: 'bank'|'cash'|'credit'; currency: 'DOP'|'USD'; ... }
+interface Transaction { id: string; accountId: string; amount: number; isRecurring: boolean; nextPaymentDate?: string; ... }
+interface UserProfile { expertiseLevel: 'novice'|'builder'|'strategist'; ... }
+Este es tu mapa de guerra. ¿Por cuál frente quieres atacar primero hoy? (Mi recomendación: Fase 1.1 - Modo Demo para solucionar la sensación de "app vacía").

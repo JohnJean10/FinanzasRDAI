@@ -5,8 +5,8 @@ import { FinancialProvider } from "@/lib/context/financial-context";
 import { Sidebar } from "@/components/ui/sidebar";
 import { GlobalAddButton } from "@/components/ui/GlobalAddButton";
 import { AddTransactionModal } from "@/components/features/transactions/AddTransactionModal";
-
 import { ThemeProvider } from "@/components/theme-provider";
+import { OnboardingGuard } from "@/components/auth/OnboardingGuard";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,8 +15,6 @@ export const metadata: Metadata = {
   description: "Gestión inteligente de tus finanzas personales",
 };
 
-import { OnboardingGuard } from "@/components/auth/OnboardingGuard";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +22,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
+      {/* Usamos bg-background y text-foreground que ahora son dinámicos */}
+      <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -34,6 +33,7 @@ export default function RootLayout({
           <FinancialProvider>
             <OnboardingGuard>
               <Sidebar />
+              {/* Quitamos clases hardcodeadas del main también */}
               <main className="lg:pl-64 min-h-screen transition-all duration-200">
                 {children}
               </main>
@@ -47,6 +47,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-
