@@ -121,7 +121,7 @@ export function CoachSidebar() {
                                 <div>
                                     <h6 className="font-medium text-slate-900 dark:text-white text-sm">Alerta de Intereses</h6>
                                     <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 leading-relaxed">
-                                        Tienes deudas con tasa > 25%. Prioriza pagar esto antes de invertir.
+                                        Tienes deudas con tasa &gt; 25%. Prioriza pagar esto antes de invertir.
                                     </p>
                                 </div>
                             </div>
