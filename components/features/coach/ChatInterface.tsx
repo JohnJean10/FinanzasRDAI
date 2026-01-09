@@ -99,7 +99,7 @@ export function ChatInterface() {
             };
 
             // Parse for Actions
-            const actionMatch = data.response.match(/\[ACTION: (.*)\]/s);
+            const actionMatch = data.response.match(/\[ACTION: ([\s\S]*)\]/);
             if (actionMatch) {
                 try {
                     const actionData = JSON.parse(actionMatch[1]);
@@ -272,7 +272,7 @@ export function ChatInterface() {
                                             strong: ({ node, ...props }) => <strong className="font-bold text-emerald-600 dark:text-emerald-400" {...props} />,
                                         }}
                                     >
-                                        {msg.text.replace(/\[ACTION:.*\]/s, '') /* Hide raw JSON from view */}
+                                        {msg.text.replace(/\[ACTION:[\s\S]*\]/, '') /* Hide raw JSON from view */}
                                     </ReactMarkdown>
 
                                     {/* Action Confirmation Card */}
