@@ -1,180 +1,146 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { useFinancial } from "@/lib/context/financial-context";
-import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle, User, Wallet, Target } from "lucide-react";
+import { useState } from 'react'
+import { Bell, ShieldAlert, TrendingUp, Wallet } from 'lucide-react'
+import { useFinancial } from "@/lib/context/financial-context"
+import { useRouter } from "next/navigation"
 
 export default function OnboardingWizard() {
-    const { updateUser, addGoal, addTransaction } = useFinancial();
-    const router = useRouter();
-    const [step, setStep] = useState(0);
-    const [formData, setFormData] = useState({
-        name: "",
-        monthlyIncome: "",
-        currency: "DOP",
-        emergencyGoal: ""
-    });
+    const [step, setStep] = useState(1)
+    const [profile, setProfile] = useState<'deudas' | 'inversion' | null>(null)
 
-    const handleNext = () => {
-        if (step === 2) {
-            completeOnboarding();
-        } else {
-            setStep(step + 1);
-        }
-    };
+    const { updateUser } = useFinancial()
+    const router = useRouter()
 
-    const completeOnboarding = () => {
-        const income = parseFloat(formData.monthlyIncome);
+    const handleFinish = () => {
+        // Guardar perfilado (podríamos añadir esto al contexto luego)
+        console.log('Perfil seleccionado:', profile);
 
-        // 1. Update User Profile
+        // Completar onboarding básico
         updateUser({
-            name: formData.name,
-            monthlyIncome: income,
-            currency: formData.currency as 'DOP' | 'USD',
-            hasCompletedOnboarding: true
-        });
-
-        // 2. Add Initial Income Transaction (Mental Boost)
-        addTransaction({
-            type: 'income',
-            amount: income,
-            category: 'ingreso_sueldo',
-            description: 'Ingreso Mensual Ref.',
-            date: new Date().toISOString().split('T')[0],
-            account: 'general'
-        });
-
-        // 3. Create Emergency Fund Goal
-        const emergencyTarget = parseFloat(formData.emergencyGoal) || (income * 3);
-        addGoal({
-            name: 'Fondo de Emergencia',
-            target: emergencyTarget,
-            current: 0,
-            deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-            icon: '🛡️'
+            hasCompletedOnboarding: true,
+            // Defaults seguros para evitar errores en dashboard
+            name: 'Líder',
+            monthlyIncome: 0,
+            currency: 'DOP'
         });
 
         router.push('/dashboard');
-    };
+    }
 
-    const steps = [
-        {
-            icon: User,
-            title: "¡Hola! Soy tu Coach Financiero",
-            subtitle: "Vamos a personalizar tu experiencia. ¿Cómo te llamas?",
-            content: (
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tu Nombre</label>
-                        <input
-                            type="text"
-                            className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ej: Juan Pérez"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Moneda Principal</label>
-                        <select
-                            className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-                            value={formData.currency}
-                            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                        >
-                            <option value="DOP">Peso Dominicano (DOP)</option>
-                            <option value="USD">Dólar Estadounidense (USD)</option>
-                        </select>
-                    </div>
-                </div>
-            )
-        },
-        {
-            icon: Wallet,
-            title: "Tu Salud Financiera",
-            subtitle: "Para darte buenos consejos, necesito saber tus ingresos.",
-            content: (
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ingreso Mensual Promedio</label>
-                        <input
-                            type="number"
-                            className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="0.00"
-                            value={formData.monthlyIncome}
-                            onChange={(e) => setFormData({ ...formData, monthlyIncome: e.target.value })}
-                        />
-                        <p className="text-xs text-slate-500 mt-2">Esta información es privada y solo se guarda en tu dispositivo.</p>
-                    </div>
-                </div>
-            )
-        },
-        {
-            icon: Target,
-            title: "Tu Primera Meta",
-            subtitle: "Todo buen plan empieza por un Fondo de Emergencia de 3 meses.",
-            content: (
-                <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                        <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-1">Recomendación del Coach</h4>
-                        <p className="text-sm text-blue-600 dark:text-blue-400">
-                            Basado en tus ingresos, te sugiero guardar <b>RD${((parseFloat(formData.monthlyIncome) || 0) * 3).toLocaleString()}</b> para imprevistos.
-                        </p>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Meta para Fondo de Emergencia</label>
-                        <input
-                            type="number"
-                            className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Monto objetivo"
-                            value={formData.emergencyGoal || (parseFloat(formData.monthlyIncome) ? (parseFloat(formData.monthlyIncome) * 3).toString() : "")}
-                            onChange={(e) => setFormData({ ...formData, emergencyGoal: e.target.value })}
-                        />
-                    </div>
-                </div>
-            )
-        }
-    ];
+    // FRENTE 1: El Hook (Bienvenida con personalidad)
+    const renderStep1 = () => (
+        <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in slide-in-from-bottom-4">
+            <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-full">
+                <span className="text-4xl">🤖</span>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                ¡Dímelo líder!
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">
+                Soy tu nuevo asesor financiero. No soy un banco, así que no te voy a vender tarjetas.
+                Vine a que hablemos claro de tus cuartos.
+            </p>
+            <button
+                onClick={() => setStep(2)}
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-all"
+            >
+                Vamos al mambo
+            </button>
+        </div>
+    )
 
-    const CurrentStep = steps[step];
-    const Icon = CurrentStep.icon;
+    // FRENTE 2: Perfilado Inteligente (La bifurcación)
+    const renderStep2 = () => (
+        <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-right-8">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Para empezar, sé sincero conmigo...
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400">
+                ¿Cuál es tu realidad ahora mismo? Esto define cómo te voy a aconsejar.
+            </p>
 
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-xl p-8 border border-slate-200 dark:border-slate-800">
-                {/* Progress */}
-                <div className="flex gap-2 mb-8">
-                    {[0, 1, 2].map(i => (
-                        <div key={i} className={`h-2 flex-1 rounded-full transition-colors ${i <= step ? 'bg-blue-600' : 'bg-slate-100 dark:bg-slate-800'}`} />
-                    ))}
-                </div>
-
-                {/* Header */}
-                <div className="mb-8 text-center">
-                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 dark:text-blue-400">
-                        <Icon size={32} />
-                    </div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{CurrentStep.title}</h2>
-                    <p className="text-slate-500 dark:text-slate-400">{CurrentStep.subtitle}</p>
-                </div>
-
-                {/* Content */}
-                <div className="mb-8">
-                    {CurrentStep.content}
-                </div>
-
-                {/* Actions */}
+            <div className="grid gap-4">
+                {/* Opción A: Deudas (Modo Bola de Nieve) */}
                 <button
-                    onClick={handleNext}
-                    disabled={
-                        (step === 0 && !formData.name) ||
-                        (step === 1 && !formData.monthlyIncome)
-                    }
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    onClick={() => { setProfile('deudas'); setStep(3); }}
+                    className="flex items-center p-4 border-2 border-slate-200 dark:border-slate-800 rounded-xl hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all text-left group"
                 >
-                    {step === 2 ? 'Comenzar mi Viaje' : 'Continuar'} <ArrowRight size={20} />
+                    <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-full mr-4 group-hover:bg-red-200 dark:group-hover:bg-red-800">
+                        <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                        <span className="block font-bold text-slate-900 dark:text-white">Tengo un lío de deudas</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Necesito organizar mis pagos y salir de esto rápido.</span>
+                    </div>
+                </button>
+
+                {/* Opción B: Inversión/Gasto (Modo Psicológico) */}
+                <button
+                    onClick={() => { setProfile('inversion'); setStep(3); }}
+                    className="flex items-center p-4 border-2 border-slate-200 dark:border-slate-800 rounded-xl hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all text-left group"
+                >
+                    <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full mr-4 group-hover:bg-green-200 dark:group-hover:bg-green-800">
+                        <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                        <span className="block font-bold text-slate-900 dark:text-white">Estoy "limpio", quiero crecer</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">Quiero invertir o saber si puedo darme un gusto sin culpa.</span>
+                    </div>
                 </button>
             </div>
         </div>
-    );
+    )
+
+    // FRENTE 3: Permisos (Sinceridad total)
+    const renderStep3 = () => (
+        <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-right-8">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Una última cosa, sin rodeos
+            </h2>
+            <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                <p>
+                    Para que esto funcione, necesito que me des luz verde con las notificaciones.
+                </p>
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-start mb-2">
+                        <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 mt-1" />
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">¿Para qué?</p>
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                        No es para molestarte. Es para avisarte 2 días antes de que el banco te cobre mora.
+                        Si se te pasa la fecha, pierdes dinero, y mi trabajo es que no pierdas.
+                    </p>
+                </div>
+            </div>
+
+            <button
+                onClick={handleFinish}
+                className="w-full bg-slate-900 dark:bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-slate-200 dark:shadow-blue-900/20"
+            >
+                Dale, activalo
+            </button>
+
+            <button onClick={handleFinish} className="w-full py-3 text-slate-400 text-sm hover:text-slate-600 dark:hover:text-slate-200">
+                Ahora no, prefiero arriesgarme
+            </button>
+        </div>
+    )
+
+    return (
+        <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-6">
+            <div className="w-full max-w-md">
+                {step === 1 && renderStep1()}
+                {step === 2 && renderStep2()}
+                {step === 3 && renderStep3()}
+
+                {/* Indicador de progreso simple */}
+                <div className="flex justify-center mt-8 space-x-2">
+                    <div className={`h-1 w-8 rounded ${step >= 1 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
+                    <div className={`h-1 w-8 rounded ${step >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
+                    <div className={`h-1 w-8 rounded ${step >= 3 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />
+                </div>
+            </div>
+        </div>
+    )
 }
