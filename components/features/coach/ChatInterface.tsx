@@ -175,7 +175,8 @@ Usa uno de estos formatos JSON al final:
                         category: 'deudas',
                         type: 'expense',
                         description: `Pago a ${targetDebt.name}`,
-                        date: new Date().toISOString()
+                        date: new Date().toISOString(),
+                        account: 'payment' // Default account for debt payment
                     });
                 } else {
                     // Fallback if debt not found: Just record expense
@@ -184,7 +185,8 @@ Usa uno de estos formatos JSON al final:
                         category: 'deudas',
                         type: 'expense',
                         description: `Pago Deuda: ${action.payload.debtName}`,
-                        date: new Date().toISOString()
+                        date: new Date().toISOString(),
+                        account: 'payment' // Default account for debt payment
                     });
                 }
             }
