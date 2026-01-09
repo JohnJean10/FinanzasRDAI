@@ -90,15 +90,16 @@ CONTEXTO CLAVE:
 REGLAS:
 1. **BREVEDAD**: Máximo 2-3 oraciones.
 2. **REACTIVIDAD**: Si pide pagar deuda, verifica si tiene saldo.
+3. **INTERPRETACIÓN**: Si dice "Saldé X", asume que pagó el monto total de esa deuda.
 
-PROTOCOLO DE ACCIÓN:
-Usa uno de estos formatos JSON al final:
+PROTOCOLO DE ACCIÓN (ESTRICTO):
+TU RESPUESTA DEBE SEGUIR ESTE FORMATO EXACTO SI HAY ACCIÓN. NO INVENTES COMANDOS (E.g., NO USES updateDebt).
+SIEMPRE ENVUELVE EL JSON EN [ACTION: ...].
 
 1. GASTO/AHORRO:
 [ACTION: {"type": "ADD_TRANSACTION", "payload": {"amount":NUMBER, "category":"CATEGORY", "type":"expense"|"income", "description":"TEXT", "date":"ISO_DATE"}}]
-* Si es AHORRO: category='ahorro'.
 
-2. PAGO DE DEUDA (Importantísimo):
+2. PAGO DE DEUDA:
 [ACTION: {"type": "PAY_DEBT", "payload": {"amount":NUMBER, "debtName":"EXACT_NAME_FROM_CONTEXT"}}]
 `;
 
@@ -108,7 +109,7 @@ Usa uno de estos formatos JSON al final:
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: userMsg.text,
-                    systemInstruction: generateSystemPrompt(), // NEW: Dynamic Prompt
+                    systemInstruction: generateSystemPrompt(),
                     context: {
                         userProfile: user,
                         financialSnapshot: contextSummary
@@ -129,17 +130,41 @@ Usa uno de estos formatos JSON al final:
                 timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
             };
 
-            // Parse for Actions
+            // Parse for Actions (Robust Polyfill)
+            let actionData: ActionCommand | undefined;
+
+            // 1. Try Standard Protocol
             const actionMatch = data.response.match(/\[ACTION: ([\s\S]*)\]/);
             if (actionMatch) {
                 try {
-                    const actionData = JSON.parse(actionMatch[1]);
-                    aiMsg.action = actionData;
-                } catch (e) {
-                    console.error("Failed to parse AI action:", e);
+                    actionData = JSON.parse(actionMatch[1]);
+                } catch (e) { console.error("Standard Parse Failed", e); }
+            }
+
+            // 2. Fallback: Try extracting Raw JSON if protocol failed
+            if (!actionData) {
+                const jsonMatch = data.response.match(/\{[\s\S]*"type":[\s\S]*\}/) || data.response.match(/```json([\s\S]*)```/);
+                if (jsonMatch) {
+                    try {
+                        const raw = jsonMatch[1] || jsonMatch[0];
+                        const parsed = JSON.parse(raw);
+                        // Map hallucinated 'updateDebt' to 'PAY_DEBT' if structure matches vaguely
+                        if (parsed.action === 'updateDebt' || parsed.type === 'updateDebt') {
+                            actionData = {
+                                type: 'PAY_DEBT',
+                                payload: {
+                                    amount: parsed.amount || 0, // Should prompt AI to be better, but this prevents crash
+                                    debtName: parsed.debt || parsed.debtName || 'Deuda General'
+                                }
+                            };
+                        } else if (parsed.type) {
+                            actionData = parsed;
+                        }
+                    } catch (e) { console.error("Fallback Parse Failed", e); }
                 }
             }
 
+            if (actionData) aiMsg.action = actionData;
             setMessages(prev => [...prev, aiMsg]);
         } catch (error: any) {
             console.error(error);
