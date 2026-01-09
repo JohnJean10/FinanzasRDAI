@@ -116,8 +116,44 @@ export function calculateCashFlowPrediction(balance: any, patterns?: any): any[]
 }
 
 export function detectRecurringTransactions(transactions: Transaction[]): any[] {
-  // Basic mock implementation
-  return [];
+  if (!transactions || transactions.length < 2) return [];
+
+  const groups: Record<string, Transaction[]> = {};
+
+  // 1. Agrupar por descripción (normalizada)
+  transactions.forEach(t => {
+    const key = t.description.toLowerCase().trim();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  const recurring: any[] = [];
+
+  // 2. Analizar grupos
+  Object.entries(groups).forEach(([name, txs]) => {
+    if (txs.length >= 2) {
+      // Ordenar por fecha
+      txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      const latest = txs[0];
+      const amount = latest.amount;
+
+      // Verificar consistencia en monto (variación < 10%)
+      const isConsistentAmount = txs.every(t => Math.abs(t.amount - amount) / amount < 0.1);
+
+      if (isConsistentAmount) {
+        recurring.push({
+          description: latest.description,
+          amount: Math.abs(latest.amount),
+          frequency: 'monthly', // Asumimos mensual por defecto para MVP
+          type: latest.type,
+          lastDate: latest.date
+        });
+      }
+    }
+  });
+
+  return recurring;
 }
 
 export function detectSubscriptionPatterns(transactions: Transaction[]): any[] {

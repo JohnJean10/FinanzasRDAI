@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { useFinancial } from "@/lib/context/financial-context";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, detectRecurringTransactions } from "@/lib/utils";
 
 interface Message {
     id: string;
@@ -51,10 +51,17 @@ export function ChatInterface() {
 
         try {
             // Context Formatting
+            const recurringExpenses = detectRecurringTransactions(transactions);
+            const netWorth = metrics.totalAssets - metrics.totalDebt;
+            const savingsRate = user.monthlyIncome > 0 ? ((user.monthlyIncome - metrics.totalExpenses) / user.monthlyIncome) * 100 : 0;
+
             const contextSummary = {
                 balanceDisponible: formatCurrency(metrics.availableBalance),
-                deudas: debts.map(d => `${d.name}: ${formatCurrency(d.currentBalance)} (Tasa: ${d.interestRate}%)`),
+                patrimonioNeto: formatCurrency(netWorth), // NEW
+                tasaAhorro: `${savingsRate.toFixed(1)}%`, // NEW
+                deudas: debts.map(d => `${d.name}: ${formatCurrency(d.currentBalance)} (Tasa: ${d.interestRate}%, Min: ${formatCurrency(d.minPayment)})`),
                 gastosRecientes: transactions.slice(0, 5).map(t => `${t.category}: ${formatCurrency(t.amount)} (${new Date(t.date).toLocaleDateString()})`),
+                suscripciones: recurringExpenses.map(r => `${r.description}: ${formatCurrency(r.amount)}`), // NEW
                 ingresosMensuales: formatCurrency(user.monthlyIncome)
             };
 
