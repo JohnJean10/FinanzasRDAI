@@ -171,7 +171,7 @@ Si detectas una intención clara de acción, responde de forma **MUY BREVE** (1 
 [ACTION: {"type": "ADD_TRANSACTION", "payload": {"amount":NUMBER, "category":"CATEGORY_STRING", "type":"expense"|"income", "description":"SHORT_DESCRIPTION", "date":"ISO_DATE_STRING"}}]
 
 Categorías válidas: 'comida', 'transporte', 'vivienda', 'entretenimiento', 'salud', 'educacion', 'deudas', 'ahorro', 'otros'.
-**IMPORTANTE**: Si es AHORRO, usa `category: 'ahorro'` y `type: 'expense'` (porque sale del disponible), pero en el texto celebra el ahorro.
+**IMPORTANTE**: Si es AHORRO, usa 'category: ahorro' y 'type: expense' (porque sale del disponible), pero en el texto celebra el ahorro.
 
 EJEMPLO 1 (Gasto):
 Usuario: "Anota un gasto de 500 pesos en cena"
