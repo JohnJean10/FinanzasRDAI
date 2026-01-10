@@ -59,6 +59,8 @@ interface FinancialContextType extends AppData {
         totalAssets: number;
         totalDebt: number;
     };
+    timeRange: TimeRange;
+    setTimeRange: (range: TimeRange) => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
