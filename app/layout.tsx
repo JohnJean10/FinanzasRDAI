@@ -5,6 +5,7 @@ import { FinancialProvider } from "@/lib/context/financial-context";
 import { Sidebar } from "@/components/ui/sidebar";
 import { GlobalAddButton } from "@/components/ui/GlobalAddButton";
 import { AddTransactionModal } from "@/components/features/transactions/AddTransactionModal";
+import { GlobalCoachWidget } from "@/components/features/coach/GlobalCoachWidget";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
               </main>
               {/* Global Components */}
               <GlobalAddButton />
+              <GlobalCoachWidget />
               <AddTransactionModal />
             </OnboardingGuard>
           </FinancialProvider>

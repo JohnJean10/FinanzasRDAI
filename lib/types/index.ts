@@ -80,6 +80,7 @@ export interface UserProfile {
         goalAchievements: boolean;
         debtReminders: boolean;
     };
+    aiLearnedFacts?: string[]; // Memory of user preferences
 }
 
 import { Notification } from '../services/notifications';

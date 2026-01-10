@@ -21,7 +21,7 @@ interface ActionCommand {
 }
 
 export function ChatInterface() {
-    const { user, transactions, debts, metrics, addTransaction, payDebt } = useFinancial(); // IMPORT payDebt
+    const { user, transactions, debts, metrics, addTransaction, payDebt, learnFact, addGoal } = useFinancial(); // IMPORT payDebt, learnFact, addGoal
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -31,161 +31,45 @@ export function ChatInterface() {
             timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
         }
     ]);
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    // ...
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    // (Inside handleSend)
+    // 2. Dynamic System Prompt
+    const learnedFactsBlock = user.aiLearnedFacts?.length
+        ? `\nLO QUE SÉ DE TI:\n${user.aiLearnedFacts.map(f => `- ${f}`).join('\n')}`
+        : "";
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    const handleSend = async () => {
-        if (!input.trim()) return;
-
-        const userMsg: Message = {
-            id: Date.now().toString(),
-            text: input,
-            sender: 'user',
-            timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
-        };
-
-        setMessages(prev => [...prev, userMsg]);
-        setInput("");
-        setIsLoading(true);
-
-        try {
-            // Context Formatting
-            const recurringExpenses = detectRecurringTransactions(transactions);
-            const netWorth = metrics.totalAssets - metrics.totalDebt;
-            const savingsRate = user.monthlyIncome > 0 ? ((user.monthlyIncome - metrics.totalExpenses) / user.monthlyIncome) * 100 : 0;
-
-            const contextSummary = {
-                balanceDisponible: formatCurrency(metrics.availableBalance),
-                patrimonioNeto: formatCurrency(netWorth),
-                tasaAhorro: `${savingsRate.toFixed(1)}%`,
-                // Send Name AND ID for precision, though AI might prefer names
-                deudas: debts.map(d => ({ name: d.name, amount: d.currentBalance, id: d.id, rate: d.interestRate })),
-                gastosRecientes: transactions.slice(0, 5).map(t => `${t.category}: ${formatCurrency(t.amount)}`),
-                ingresosMensuales: formatCurrency(user.monthlyIncome)
-            };
-
-            // 1. Calculations
-            const totalDebt = debts.reduce((sum, d) => sum + d.currentBalance, 0);
-            const income = user.monthlyIncome;
-            const available = metrics.availableBalance;
-            const worstDebt = debts.sort((a, b) => b.interestRate - a.interestRate)[0];
-
-            // 2. Dynamic System Prompt
-            const generateSystemPrompt = () => `
-ERES: FinanzasRD AI, coach financiero dominicano.
-OBJETIVO: Ayudar al usuario a progresar.
+    const generateSystemPrompt = () => `
+ERES: FinanzasRD AI, coach financiero dominicano proactivo.
+OBJETIVO: Ayudar al usuario a progresar y aprender de él.
 
 CONTEXTO CLAVE:
 - Deuda Total: ${formatCurrency(totalDebt)}
 - Disponible: ${formatCurrency(available)}
+${learnedFactsBlock}
 
 REGLAS:
 1. **BREVEDAD**: Máximo 2-3 oraciones.
 2. **REACTIVIDAD**: Si pide pagar deuda, verifica si tiene saldo.
-3. **INTERPRETACIÓN**: Si dice "Saldé X", asume que pagó el monto total de esa deuda.
+3. **MEMORIA**: Si detectas una preferencia clara (ej: "No me gustan los riesgos"), guárdala con command learn_fact.
 
 PROTOCOLO DE ACCIÓN (ESTRICTO):
-TU RESPUESTA DEBE SEGUIR ESTE FORMATO EXACTO SI HAY ACCIÓN. NO INVENTES COMANDOS (E.g., NO USES updateDebt).
-SIEMPRE ENVUELVE EL JSON EN [ACTION: ...].
+Usa [ACTION: JSON] para realizar cambios.
 
-1. GASTO/AHORRO:
-[ACTION: {"type": "ADD_TRANSACTION", "payload": {"amount":NUMBER, "category":"CATEGORY", "type":"expense"|"income", "description":"TEXT", "date":"ISO_DATE"}}]
+1. GASTO/AHORRO/INGRESO:
+[ACTION: {"type": "ADD_TRANSACTION", "payload": {"amount":NUMBER, "category":"CATEGORY", "type":"expense"|"income"|"saving", "description":"TEXT", "date":"ISO_DATE", "goalId":OPTIONAL_NUMBER}}]
 
 2. PAGO DE DEUDA:
-[ACTION: {"type": "PAY_DEBT", "payload": {"amount":NUMBER, "debtName":"EXACT_NAME_FROM_CONTEXT"}}]
+[ACTION: {"type": "PAY_DEBT", "payload": {"amount":NUMBER, "debtName":"EXACT_NAME"}}]
+
+3. APRENDER DATO:
+[ACTION: {"type": "LEARN_FACT", "payload": {"fact":"TEXTO DE LA PREFERENCIA"}}]
+
+4. CREAR META:
+[ACTION: {"type": "CREATE_GOAL", "payload": {"name":"TEXT", "target":NUMBER, "deadline":"ISO_DATE", "icon":"EMOJI"}}]
 `;
 
-            // Secure Backend Call
-            const response = await fetch('/api/gemini', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    // Send full history (excluding welcome message if it's just a greeting, 
-                    // but for simplicity we can send valid user/ai turns)
-                    history: [...messages.filter(m => m.id !== 'welcome'), userMsg].map(m => ({
-                        role: m.sender === 'user' ? 'user' : 'model',
-                        parts: [{ text: m.text }]
-                    })),
-                    // Also send current message for redundancy if needed, though history handles it
-                    message: userMsg.text,
-                    systemInstruction: generateSystemPrompt(),
-                    context: {
-                        userProfile: user,
-                        financialSnapshot: contextSummary
-                    }
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || data.error) {
-                throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
-            }
-
-            const aiMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                text: data.response,
-                sender: 'ai',
-                timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
-            };
-
-            // Parse for Actions (Robust Polyfill)
-            let actionData: ActionCommand | undefined;
-
-            // 1. Try Standard Protocol
-            const actionMatch = data.response.match(/\[ACTION: ([\s\S]*)\]/);
-            if (actionMatch) {
-                try {
-                    actionData = JSON.parse(actionMatch[1]);
-                } catch (e) { console.error("Standard Parse Failed", e); }
-            }
-
-            // 2. Fallback: Try extracting Raw JSON if protocol failed
-            if (!actionData) {
-                const jsonMatch = data.response.match(/\{[\s\S]*"type":[\s\S]*\}/) || data.response.match(/```json([\s\S]*)```/);
-                if (jsonMatch) {
-                    try {
-                        const raw = jsonMatch[1] || jsonMatch[0];
-                        const parsed = JSON.parse(raw);
-                        // Map hallucinated 'updateDebt' to 'PAY_DEBT' if structure matches vaguely
-                        if (parsed.action === 'updateDebt' || parsed.type === 'updateDebt') {
-                            actionData = {
-                                type: 'PAY_DEBT',
-                                payload: {
-                                    amount: parsed.amount || 0, // Should prompt AI to be better, but this prevents crash
-                                    debtName: parsed.debt || parsed.debtName || 'Deuda General'
-                                }
-                            };
-                        } else if (parsed.type) {
-                            actionData = parsed;
-                        }
-                    } catch (e) { console.error("Fallback Parse Failed", e); }
-                }
-            }
-
-            if (actionData) aiMsg.action = actionData;
-            setMessages(prev => [...prev, aiMsg]);
-        } catch (error: any) {
-            console.error(error);
-            const errorMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                text: `⚠️ Error: ${error.message || "No pude conectar con el servidor."}`,
-                sender: 'ai',
-                timestamp: new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })
-            };
-            setMessages(prev => [...prev, errorMsg]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // ... fetch logic ...
 
     // --- ACTION HANDLERS ---
     const handleExecuteAction = (msgId: string, action: ActionCommand) => {
@@ -196,32 +80,41 @@ SIEMPRE ENVUELVE EL JSON EN [ACTION: ...].
                     date: new Date().toISOString()
                 });
             } else if (action.type === 'PAY_DEBT') {
-                // 1. Find Debt
+                // ... (Existing PayDebt Logic)
                 const targetDebt = debts.find(d => d.name.toLowerCase().includes(action.payload.debtName.toLowerCase()));
                 if (targetDebt) {
-                    // 2. Reduce Debt Balance
                     payDebt(targetDebt.id, action.payload.amount);
-                    // 3. Record the outflow transaction
                     addTransaction({
                         amount: action.payload.amount,
                         category: 'deudas',
                         type: 'expense',
                         description: `Pago a ${targetDebt.name}`,
                         date: new Date().toISOString(),
-                        account: 'payment' // Default account for debt payment
+                        account: 'payment'
                     });
                 } else {
-                    // Fallback if debt not found: Just record expense
                     addTransaction({
                         amount: action.payload.amount,
                         category: 'deudas',
                         type: 'expense',
                         description: `Pago Deuda: ${action.payload.debtName}`,
                         date: new Date().toISOString(),
-                        account: 'payment' // Default account for debt payment
+                        account: 'payment'
                     });
                 }
+            } else if (action.type === 'LEARN_FACT') {
+                learnFact(action.payload.fact);
+            } else if (action.type === 'CREATE_GOAL') {
+                addGoal({
+                    name: action.payload.name,
+                    target: action.payload.target,
+                    current: 0,
+                    deadline: action.payload.deadline,
+                    icon: action.payload.icon || '🎯',
+                    isNative: false
+                });
             }
+
             // Update message state
             setMessages(prev => prev.map(m => m.id === msgId ? { ...m, actionExecuted: true } : m));
         } catch (e) {

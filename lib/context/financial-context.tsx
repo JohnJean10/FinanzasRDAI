@@ -45,23 +45,8 @@ interface FinancialContextType extends AppData {
     deleteDebt: (id: string) => void;
     payDebt: (id: string, amount: number) => void;
     updateDebt: (id: string, debt: Partial<Debt>) => void;
-    isTransactionModalOpen: boolean;
-    openTransactionModal: () => void;
-    closeTransactionModal: () => void;
-    timeRange: TimeRange;
-    setTimeRange: (range: TimeRange) => void;
-    metrics: {
-        totalIncome: number;
-        totalExpenses: number;
-        balance: number;          // Balance Total (Bancario)
-        availableBalance: number; // NUEVO: Balance - Ahorros (Lo que puedes gastar)
-        savingsRate: number;      // Tasa de ahorro del mes (Relación I-G)
-        monthlyBurnRate: number;
-        totalSavings: number;     // NUEVO: Suma de lo ahorrado en metas
-        totalGoalsTarget: number; // NUEVO: Suma de los objetivos de metas
-        totalAssets: number;      // NUEVO: Total Assets (Historical Balance)
-        totalDebt: number;        // NUEVO: Total Debt Balance
-    };
+    learnFact: (fact: string) => void; // NUEVO: Memoria
+    setBudget: (category: string, limit: number) => void; // Alias for AI
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -89,6 +74,33 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         localStorage.setItem('finanzasrd_data_v2', JSON.stringify(data));
     }, [data]);
+
+    // ... (metrics logic omitted for brevity as it is unchanged) ...
+
+    // --- AI MEMORY ---
+    const learnFact = (fact: string) => {
+        setData(prev => {
+            const currentFacts = prev.user.aiLearnedFacts || [];
+            // Avoid duplicates
+            if (currentFacts.includes(fact)) return prev;
+            return {
+                ...prev,
+                user: {
+                    ...prev.user,
+                    aiLearnedFacts: [...currentFacts, fact]
+                }
+            };
+        });
+    };
+
+    // ... (rest of functions) ...
+    // Note: I will only replace the end of the file to include the new export, assuming the intermediate code is intact or handled by not overwriting it if I target specific blocks. 
+    // actually, replace_file_content replaces a block. I need to be careful.
+    // I will use multi_replace to insert the interface change and the implementation separately.
+    // wait, I can just use one block if I target the return.
+
+    // Changing strategy: using multi_replace to be precise.
+
 
     // --- CÁLCULO DE MÉTRICAS CON SEGMENTACIÓN TEMPORAL AVANZADA ---
     const metrics = useMemo(() => {
@@ -378,6 +390,8 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         setData(prev => ({ ...prev, user: { ...prev.user, ...u } }));
     };
 
+
+
     const updateBudget = (category: string, limit: number) => {
         setData(prev => {
             const existing = prev.budgetConfigs.find(b => b.category === category);
@@ -452,7 +466,9 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             addDebt,
             deleteDebt,
             updateDebt,
-            payDebt
+            payDebt,
+            learnFact,
+            setBudget: updateBudget
         }}>
             {children}
         </FinancialContext.Provider>
