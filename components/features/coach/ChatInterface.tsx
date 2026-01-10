@@ -108,6 +108,13 @@ SIEMPRE ENVUELVE EL JSON EN [ACTION: ...].
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    // Send full history (excluding welcome message if it's just a greeting, 
+                    // but for simplicity we can send valid user/ai turns)
+                    history: [...messages.filter(m => m.id !== 'welcome'), userMsg].map(m => ({
+                        role: m.sender === 'user' ? 'user' : 'model',
+                        parts: [{ text: m.text }]
+                    })),
+                    // Also send current message for redundancy if needed, though history handles it
                     message: userMsg.text,
                     systemInstruction: generateSystemPrompt(),
                     context: {
