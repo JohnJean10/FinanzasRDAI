@@ -47,6 +47,8 @@ export function ChatInterface() {
     const handleSend = async () => {
         if (!input.trim()) return;
 
+        const { totalDebt, availableBalance: available } = metrics;
+
         const userMsg: Message = {
             id: Date.now().toString(),
             text: input,
@@ -60,8 +62,6 @@ export function ChatInterface() {
 
         // Prepare context for AI
         const contextSummary = {
-            totalDebt,
-            availableBalance: available, // Use the new available calculation
             ...metrics
         };
 
