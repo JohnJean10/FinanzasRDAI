@@ -180,12 +180,15 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         const totalSavings = goals.reduce((acc, goal) => acc + goal.current, 0);
         const totalGoalsTarget = goals.reduce((acc, goal) => acc + goal.target, 0);
 
-        // 3. NUEVO: Calcular Disponible Real (Contabilidad Mental)
-        // Disponible = Lo que hay en el banco (balance total) - Lo que ya tiene nombre (totalSavings)
-        // PERO: Si el usuario movió dinero a una cuenta externa (Saving), el balance bajó (si se tratara como gasto).
-        // AL TRATARLO COMO 'SAVING' (Neutro en Balance), "Historical Balance" incluye ese dinero.
-        // Entonces: Disponible = (Dinero Total) - (Dinero Asignado a Metas). CORRECTO.
-        const availableBalance = historicalBalance - totalSavings;
+        // 3. NUEVO: Lógica Híbrida de Disponibilidad
+        // Si el ahorro fue 'expense' (Salió), ya restó del balance.
+        // Si el ahorro fue 'saving' (Virtual), está en el balance pero no es disponible.
+        // Available = Balance - (Ahorros Virtuales/Phantom)
+        const phantomSavings = transactions
+            .filter(t => t.type === 'saving')
+            .reduce((acc, t) => acc + t.amount, 0);
+
+        const availableBalance = historicalBalance - phantomSavings;
 
         // 4. "La Película" (Flujo): Ingresos/Gastos DENTRO del rango seleccionado
         const periodMetrics = transactions.reduce(
@@ -300,34 +303,51 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     };
 
     const addTransaction = (t: Omit<Transaction, 'id'>) => {
-        const newTx = { ...t, id: Date.now() } as Transaction;
+        let finalType = t.type;
+        let finalCategory = t.category;
 
-        // 1. Handle Budget Check (Only for Expenses)
-        if (t.type === 'expense') {
-            const budget = data.budgetConfigs.find(b => b.category === t.category);
+        // CRITICAL LOGIC: If linked to a goal, FORCE it to be an expense (money leaving)
+        // but categorized as 'ahorro' for tracking.
+        if (t.goalId || t.category === 'ahorro' || t.type === 'saving') {
+            finalType = 'expense';
+            finalCategory = 'ahorro';
+        }
+
+        const newTx = {
+            ...t,
+            type: finalType,
+            category: finalCategory,
+            id: Date.now()
+        } as Transaction;
+
+        // 1. Handle Budget Check (Only for true Expenses, excluding savings if we want, but user said 'expense')
+        // We warn about savings if they exceed budget too? Yes, usually.
+        if (finalType === 'expense') {
+            const budget = data.budgetConfigs.find(b => b.category === finalCategory);
             if (budget) {
                 const currentMonth = new Date().getMonth();
                 const totalSpent = data.transactions
-                    .filter(tx => tx.category === t.category && tx.type === 'expense' && new Date(tx.date).getMonth() === currentMonth)
+                    .filter(tx => tx.category === finalCategory && tx.type === 'expense' && new Date(tx.date).getMonth() === currentMonth)
                     .reduce((sum, tx) => sum + tx.amount, 0) + t.amount;
 
-                const alert = NotificationService.checkBudgetThreshold(t.category, totalSpent, budget.limit);
+                const alert = NotificationService.checkBudgetThreshold(finalCategory, totalSpent, budget.limit);
                 if (alert) {
                     addNotification(alert);
                 }
             }
         }
 
-        // 2. Handle Savings Goal Update (Only for Savings)
-        if (t.type === 'saving' && t.goalId) {
+        // 2. Handle Savings Goal Update
+        if (t.goalId) {
             setData(prev => ({
                 ...prev,
                 transactions: [newTx, ...prev.transactions],
+                // Force new array reference for goals to trigger updates
                 goals: prev.goals.map(g =>
                     g.id === t.goalId ? { ...g, current: g.current + t.amount } : g
                 )
             }));
-            return; // Exit early since we set data here
+            return;
         }
 
         setData(prev => ({ ...prev, transactions: [newTx, ...prev.transactions] }));

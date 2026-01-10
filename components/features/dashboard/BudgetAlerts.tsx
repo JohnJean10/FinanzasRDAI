@@ -9,6 +9,9 @@ interface Alert {
     category: string;
     amount: number;
     limit: number;
+    type: 'danger' | 'success' | 'warning';
+    title?: string;
+    message?: string;
 }
 
 export function BudgetAlerts() {
@@ -34,10 +37,52 @@ export function BudgetAlerts() {
                 overruns.push({
                     category: budget.category,
                     amount: spent,
-                    limit: budget.limit
+                    limit: budget.limit,
+                    type: 'danger',
+                    title: '¡Presupuesto Excedido!',
+                    message: `Has gastado ${formatCurrency(spent)} en ${budget.category}.`
                 });
             }
         });
+
+        // GLOBAL HEALTH LOGIC (Wealth Builder vs Hemorrhage)
+        const currentTx = transactions.filter(t => new Date(t.date).getMonth() === currentMonth);
+        const income = currentTx.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+
+        // Filter out savings from expenses (assuming type='expense' & category='ahorro'/'inversion'/'meta')
+        const allExpenses = currentTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+        const savingsNodes = currentTx
+            .filter(t => t.type === 'expense' && ['ahorro', 'inversion', 'meta', 'ahorros'].includes(t.category))
+            .reduce((acc, t) => acc + t.amount, 0);
+
+        const realExpenses = allExpenses - savingsNodes;
+
+        // Condition 1: Hemorrhage (Spending > Income on non-savings)
+        if (realExpenses > income && income > 0) {
+            overruns.unshift({
+                category: 'Global',
+                amount: realExpenses,
+                limit: income,
+                type: 'danger',
+                title: 'Hemorragia Financiera 🩸',
+                message: `Tus gastos reales (${formatCurrency(realExpenses)}) superan tus ingresos.`
+            });
+        }
+        // Condition 2: Wealth Builder (Positive Real Cashflow + Active Saving)
+        // If "Cash is low" (High Total Expense) but "Real Expense" is low.
+        else if ((income - realExpenses) > 0 && savingsNodes > (income * 0.1)) {
+            // Example: Earn 100, Spend 50, Save 40. Total Out 90. Cash 10.
+            // Real Expense 50 < Income 100. Positive.
+            // Savings 40 > 10.
+            overruns.unshift({
+                category: 'Global',
+                amount: savingsNodes,
+                limit: income,
+                type: 'success',
+                title: 'Modo Constructor de Riqueza 🚀',
+                message: `Estás construyendo patrimonio aunque el efectivo sea bajo. Ahorro mes: ${formatCurrency(savingsNodes)}`
+            });
+        }
 
         if (overruns.length > 0) {
             setAlerts(overruns);
@@ -60,23 +105,32 @@ export function BudgetAlerts() {
 
     return (
         <div className="fixed top-24 right-4 z-50 flex flex-col gap-2 w-full max-w-sm">
-            {alerts.map((alert) => (
+            {alerts.map((alert, idx) => (
                 <div
-                    key={alert.category}
-                    className="bg-white dark:bg-[#0f172a] border-l-4 border-red-500 shadow-xl rounded-r-xl p-4 flex items-start justify-between animate-in slide-in-from-right duration-500"
+                    key={`${alert.category}-${idx}`}
+                    className={`bg-white dark:bg-[#0f172a] border-l-4 shadow-xl rounded-r-xl p-4 flex items-start justify-between animate-in slide-in-from-right duration-500 ${alert.type === 'success' ? 'border-emerald-500' : 'border-red-500'
+                        }`}
                 >
                     <div className="flex gap-3">
-                        <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-full h-fit text-red-600 dark:text-red-400">
+                        <div className={`p-2 rounded-full h-fit ${alert.type === 'success'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                            }`}>
                             <AlertTriangle size={20} />
                         </div>
                         <div>
                             <h4 className="font-bold text-slate-800 dark:text-white text-sm">
-                                ¡Presupuesto Excedido!
+                                {alert.title || 'Alerta del Sistema'}
                             </h4>
                             <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                                Has gastado <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(alert.amount)}</span> en <span className="capitalize font-medium">{alert.category}</span>.
-                                <br />
-                                Límite: {formatCurrency(alert.limit)}
+                                {alert.message || (
+                                    <>
+                                        Has gastado <span className={`font-bold ${alert.type === 'success' ? 'text-emerald-600' : 'text-red-600'
+                                            }`}>{formatCurrency(alert.amount)}</span> en <span className="capitalize font-medium">{alert.category}</span>.
+                                        <br />
+                                        Límite: {formatCurrency(alert.limit)}
+                                    </>
+                                )}
                             </p>
                         </div>
                     </div>
