@@ -16,16 +16,24 @@ export async function POST(req: Request) {
         const { message, context, systemInstruction, history } = body;
 
         // 1. Prepare System Prompt (Personality)
-        const effectiveSystemPrompt = systemInstruction || `
+        // Allow frontend to override personality via systemInstruction
+        const baseInstruction = systemInstruction || `
             ERES: FinanzasRD AI, tu coach financiero.
             OBJETIVO: Ayudar al usuario.
+        `;
+
+        const fullSystemInstruction = `
+            ${baseInstruction}
+            
+            CONTEXTO ACTUAL (MANTENER DURANTE TODA LA SESIÓN):
+            ${JSON.stringify(context || {})}
         `;
 
         // 2. Initialize Model with System Instruction (CRITICAL for persistence)
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
             model: "gemini-2.0-flash-exp",
-            systemInstruction: effectiveSystemPrompt + `\nCONTEXTO ACTUAL (MANTENER DURANTE TODA LA SESIÓN): ${JSON.stringify(context)}`
+            systemInstruction: fullSystemInstruction
         });
 
         // 3. Prepare Chat History

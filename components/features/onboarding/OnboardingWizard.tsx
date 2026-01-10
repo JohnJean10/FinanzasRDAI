@@ -26,6 +26,10 @@ export default function OnboardingWizard() {
         emergencyGoal: ""
     });
 
+    // AI Diagnosis State
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [aiOpinion, setAiOpinion] = useState<string | null>(null);
+
     // --- CÁLCULOS MATEMÁTICOS (El Cerebro) ---
     const calculateMonthlyIncome = () => {
         const amount = parseFloat(formData.incomeAmount) || 0;
@@ -40,11 +44,63 @@ export default function OnboardingWizard() {
         return calculateMonthlyIncome() - calculateMonthlyExpenses();
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
+        // Intercept Step 2 (Financials) to trigger AI Diagnosis
+        if (step === 2 && !aiOpinion && !isAnalyzing) {
+            await fetchAiOpinion();
+            setStep(step + 1);
+            return;
+        }
+
         if (step === steps.length - 1) {
             completeOnboarding();
         } else {
             setStep(step + 1);
+        }
+    };
+
+    const fetchAiOpinion = async () => {
+        setIsAnalyzing(true);
+        try {
+            const income = parseFloat(formData.incomeAmount);
+            const expenses = parseFloat(formData.fixedExpenses);
+
+            const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: "ANALIZA_AHORA", // Trigger keyword
+                    systemInstruction: `
+                        ERES: Un Coach Financiero Dominicano experto y muy directo.
+                        MODO: "Reacción Visceral".
+                        DATOS:
+                        - Nombre: ${formData.name}
+                        - Ingresos: ${formatCurrency(income)}
+                        - Gastos Fijos: ${formatCurrency(expenses)}
+                        - Capacidad de Ahorro: ${formatCurrency(income - expenses)}
+
+                        TAREA: Dame una OPINIÓN DE UNA SOLA FRASE (Máximo 20 palabras) sobre esta situación.
+                        
+                        EJEMPLOS DE TONO:
+                        - Si está mal: "¡Diablo manín, esa olla ta caliente, frenemos eso ya!"
+                        - Si está bien: "¡Te la comiste! Tamo en racha, vamo a invertir."
+                        - Si está medio: "Tamo a flote, pero no te duermas en los laureles."
+                        
+                        IMPORTANTE: NUNCA USES FORMATO MARKDOWN, SOLO TEXTO PLANO.
+                    `,
+                    history: []
+                })
+            });
+
+            const data = await response.json();
+            if (data.response) {
+                setAiOpinion(data.response);
+            }
+        } catch (error) {
+            console.error("AI Error", error);
+            setAiOpinion("¡Vamos a organizar esto!"); // Fallback
+        } finally {
+            setIsAnalyzing(false);
         }
     };
 
@@ -139,8 +195,8 @@ export default function OnboardingWizard() {
                     <div
                         onClick={() => setFormData({ ...formData, profileType: 'deudas' })}
                         className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all group ${formData.profileType === 'deudas'
-                                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
-                                : 'border-slate-200 dark:border-slate-800 hover:border-red-300'
+                            ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-red-300'
                             }`}
                     >
                         <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full mr-4">
@@ -156,8 +212,8 @@ export default function OnboardingWizard() {
                     <div
                         onClick={() => setFormData({ ...formData, profileType: 'inversion' })}
                         className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all group ${formData.profileType === 'inversion'
-                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
-                                : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300'
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300'
                             }`}
                     >
                         <div className="p-3 bg-emerald-100 dark:bg-emerald-900 rounded-full mr-4">
@@ -226,6 +282,22 @@ export default function OnboardingWizard() {
             subtitle: "Para que esto funcione, necesito que me des luz verde.",
             content: (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                    {/* OPINIÓN DEL COACH (Highlight) */}
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-1 rounded-xl shadow-lg transform -rotate-1 hover:rotate-0 transition-transform duration-300">
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border-none relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-2 opacity-10">
+                                <Bot size={64} />
+                            </div>
+                            <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-2">
+                                <Bot size={14} /> Diagnóstico Express
+                            </h4>
+                            <p className="text-lg font-bold text-slate-800 dark:text-white italic leading-tight">
+                                "{aiOpinion || 'Analizando tus números...'}"
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
                         <div className="flex items-start mb-2">
                             <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 mt-1" />
@@ -289,12 +361,23 @@ export default function OnboardingWizard() {
                     disabled={
                         (step === 0 && !formData.name) ||
                         (step === 1 && !formData.profileType) ||
-                        (step === 2 && (!formData.incomeAmount || !formData.fixedExpenses))
+                        (step === 2 && (!formData.incomeAmount || !formData.fixedExpenses)) ||
+                        isAnalyzing
                     }
                     className="w-full py-6 text-lg rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02]"
                     size="lg"
                 >
-                    {step === steps.length - 1 ? 'Dale, actívalo 🚀' : 'Vamos al mambo'} <ArrowRight className="ml-2 h-5 w-5" />
+                    {isAnalyzing ? (
+                        <span className="flex items-center gap-2 animate-pulse">
+                            <Bot className="animate-bounce" /> Calculando estrategia...
+                        </span>
+                    ) : (
+                        step === steps.length - 1 ? (
+                            <span className="flex items-center">Dale, actívalo 🚀 <ArrowRight className="ml-2 h-5 w-5" /></span>
+                        ) : (
+                            <span className="flex items-center">Vamos al mambo <ArrowRight className="ml-2 h-5 w-5" /></span>
+                        )
+                    )}
                 </Button>
 
                 {step > 0 && (
