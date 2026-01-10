@@ -87,7 +87,7 @@ REGLAS:
 1. **BREVEDAD**: Máximo 2-3 oraciones.
 2. **REACTIVIDAD**: Si pide pagar deuda, verifica si tiene saldo.
 3. **MEMORIA**: Si detectas una preferencia clara (ej: "No me gustan los riesgos"), guárdala con command learn_fact.
-4. **ANTI-DUPLICACIÓN**: ANTES de crear una meta, REVISA "METAS ACTUALES". Si ya existe (aunque sea parecido), USA `TRANSFER_GOAL`.
+4. **ANTI-DUPLICACIÓN**: ANTES de crear una meta, REVISA "METAS ACTUALES". Si ya existe (aunque sea parecido), USA "TRANSFER_GOAL".
 
 PROTOCOLO DE ACCIÓN (ESTRICTO):
 Usa [ACTION: JSON] para realizar cambios.
