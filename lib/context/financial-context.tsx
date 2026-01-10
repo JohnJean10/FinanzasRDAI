@@ -61,6 +61,9 @@ interface FinancialContextType extends AppData {
     };
     timeRange: TimeRange;
     setTimeRange: (range: TimeRange) => void;
+    isTransactionModalOpen: boolean;
+    openTransactionModal: () => void;
+    closeTransactionModal: () => void;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
