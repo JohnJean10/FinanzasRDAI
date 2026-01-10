@@ -47,6 +47,18 @@ interface FinancialContextType extends AppData {
     updateDebt: (id: string, debt: Partial<Debt>) => void;
     learnFact: (fact: string) => void; // NUEVO: Memoria
     setBudget: (category: string, limit: number) => void; // Alias for AI
+    metrics: {
+        totalIncome: number;
+        totalExpenses: number;
+        balance: number;
+        availableBalance: number;
+        totalSavings: number;
+        totalGoalsTarget: number;
+        savingsRate: number;
+        monthlyBurnRate: number;
+        totalAssets: number;
+        totalDebt: number;
+    };
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
