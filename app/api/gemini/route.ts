@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         // 3. Prepare Chat History
         // The 'history' array from frontend includes the current user message at the end.
         // We need to separate it: history for initialization, current message for generation.
-        let validHistory = [];
+        let validHistory: any[] = [];
         let currentMessage = message;
 
         if (history && Array.isArray(history) && history.length > 0) {
