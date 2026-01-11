@@ -58,7 +58,8 @@ export function ExportPanel({ data }: ExportPanelProps) {
 
         const expenses = transactions.filter(t => t.type === 'expense');
         const expensesByCat = expenses.reduce((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            const key = t.budgetId || t.category || 'otros';
+            acc[key] = (acc[key] || 0) + t.amount;
             return acc;
         }, {} as Record<string, number>);
 
