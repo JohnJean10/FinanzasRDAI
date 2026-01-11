@@ -39,6 +39,7 @@ interface FinancialContextType extends AppData {
     updateBudget: (id: string, updates: Partial<BudgetConfig>) => void;
     addBudget: (budget: Omit<BudgetConfig, 'id'>) => void;
     deleteBudget: (id: string) => void;
+    addNotification: (n: Notification) => void;
     markNotificationRead: (id: string) => void;
     // Debts
     // Debts
@@ -510,9 +511,23 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             deleteGoal,
             updateGoal,
             updateUser,
+            updateBudget,
             addBudget,
             deleteBudget,
-            alertSystem: data.notifications, // Placeholder if needed
+            addNotification,
+            markNotificationRead,
+            isTransactionModalOpen,
+            openTransactionModal,
+            closeTransactionModal,
+            timeRange,
+            setTimeRange,
+            metrics,
+            addDebt,
+            deleteDebt,
+            updateDebt,
+            payDebt,
+            learnFact,
+            alertSystem: data.notifications,
             setBudget: (cat, lim) => {
                 // Compatibility shim for AI or other components that might use strict signature
                 // Use a find-or-create logic
