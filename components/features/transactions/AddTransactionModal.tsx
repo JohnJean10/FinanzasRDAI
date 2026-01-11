@@ -17,7 +17,10 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
         closeTransactionModal,
         addTransaction,
         updateTransaction,
-        goals // Import goals to select from
+        goals,
+        budgetConfigs,
+        addBudget,
+        getAvailableToAssign
     } = useFinancial();
 
     const isVisible = propIsOpen !== undefined ? propIsOpen : isTransactionModalOpen;
@@ -26,7 +29,8 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
     const [formData, setFormData] = useState({
         amount: "",
         description: "",
-        category: "alimentacion",
+        budgetId: "otros-default", // Changed from category
+        category: "", // Legacy
         date: new Date().toISOString().split('T')[0],
         type: "expense" as "income" | "expense" | "saving",
         account: "general",
@@ -35,6 +39,13 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
         subscriptionName: "",
         goalId: undefined as number | undefined
     });
+
+    // State for creating new budget on-the-fly
+    const [showNewBudgetPopover, setShowNewBudgetPopover] = useState(false);
+    const [newBudgetName, setNewBudgetName] = useState('');
+    const [newBudgetIcon, setNewBudgetIcon] = useState('📦');
+    const [newBudgetLimit, setNewBudgetLimit] = useState(0);
+    const [customCategoryInput, setCustomCategoryInput] = useState('');
 
     useEffect(() => {
         if (editingTransaction) {
@@ -180,8 +191,8 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                             value={formData.amount}
                             onChange={e => setFormData({ ...formData, amount: e.target.value })}
                             className={`w-full text-3xl font-bold p-2 bg-transparent border-b-2 outline-none transition-colors placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white ${formData.type === 'income' ? 'border-emerald-500/50 focus:border-emerald-500' :
-                                    formData.type === 'saving' ? 'border-blue-500/50 focus:border-blue-500' :
-                                        'border-red-500/50 focus:border-red-500'
+                                formData.type === 'saving' ? 'border-blue-500/50 focus:border-blue-500' :
+                                    'border-red-500/50 focus:border-red-500'
                                 }`}
                             placeholder="0.00"
                         />
@@ -228,22 +239,99 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Categoría</label>
                                 <div className="relative">
                                     <select
-                                        value={formData.category}
-                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        value={formData.budgetId}
+                                        onChange={e => {
+                                            if (e.target.value === '__create_new__') {
+                                                setShowNewBudgetPopover(true);
+                                            } else {
+                                                setFormData({ ...formData, budgetId: e.target.value });
+                                            }
+                                        }}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm font-medium text-slate-900 dark:text-white appearance-none"
                                     >
-                                        <option value="alimentacion">🛒 Alimentación</option>
-                                        <option value="transporte">🚗 Transporte</option>
-                                        <option value="vivienda">🏠 Vivienda</option>
-                                        <option value="entretenimiento">🎬 Entretenimiento</option>
-                                        <option value="salud">💊 Salud</option>
-                                        <option value="educacion">📚 Educación</option>
-                                        <option value="ahorros">🐷 Ahorros</option>
-                                        <option value="ingreso_sueldo">💰 Nómina</option>
-                                        <option value="otros">📦 Otros</option>
+                                        {budgetConfigs.map(budget => (
+                                            <option key={budget.id} value={budget.id}>
+                                                {budget.icon} {budget.name}
+                                            </option>
+                                        ))}
+                                        {getAvailableToAssign() > 0 && (
+                                            <option value="__create_new__" className="text-blue-600">+ Crear Nueva Categoría</option>
+                                        )}
                                     </select>
-                                    <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none opacity-50" />
                                 </div>
+
+                                {/* New Budget Popover */}
+                                {showNewBudgetPopover && (
+                                    <div className="absolute z-50 mt-2 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-64">
+                                        <h4 className="font-bold text-sm mb-3 text-slate-800 dark:text-white">Nueva Categoría</h4>
+                                        <div className="space-y-3">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const emojis = ['🍔', '🚗', '🏠', '💡', '🎮', '💊', '📚', '✈️', '👕'];
+                                                        setNewBudgetIcon(emojis[Math.floor(Math.random() * emojis.length)]);
+                                                    }}
+                                                    className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center text-xl"
+                                                >
+                                                    {newBudgetIcon}
+                                                </button>
+                                                <input
+                                                    type="text"
+                                                    value={newBudgetName}
+                                                    onChange={(e) => setNewBudgetName(e.target.value)}
+                                                    placeholder="Nombre"
+                                                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-sm outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-slate-500">Límite Mensual (Máx: RD${getAvailableToAssign().toLocaleString()})</label>
+                                                <input
+                                                    type="number"
+                                                    value={newBudgetLimit || ''}
+                                                    onChange={(e) => setNewBudgetLimit(Math.min(parseFloat(e.target.value) || 0, getAvailableToAssign()))}
+                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-sm outline-none mt-1"
+                                                />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowNewBudgetPopover(false);
+                                                        setNewBudgetName('');
+                                                        setNewBudgetLimit(0);
+                                                    }}
+                                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-medium"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (newBudgetName && newBudgetLimit > 0) {
+                                                            const newId = Date.now().toString();
+                                                            addBudget({
+                                                                name: newBudgetName,
+                                                                category: newBudgetName.toLowerCase().replace(/\s+/g, '_'),
+                                                                icon: newBudgetIcon,
+                                                                limit: newBudgetLimit,
+                                                                alerts: [80, 100]
+                                                            });
+                                                            setFormData({ ...formData, budgetId: newId });
+                                                            setShowNewBudgetPopover(false);
+                                                            setNewBudgetName('');
+                                                            setNewBudgetLimit(0);
+                                                        }
+                                                    }}
+                                                    disabled={!newBudgetName || newBudgetLimit <= 0}
+                                                    className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+                                                >
+                                                    Crear
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         <div className={formData.type === 'saving' ? "col-span-2" : ""}>

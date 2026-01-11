@@ -1,9 +1,10 @@
 export interface Transaction {
     id: number;
-    type: 'income' | 'expense' | 'saving'; // Added 'saving'
+    type: 'income' | 'expense' | 'saving';
     description: string;
     amount: number;
-    category: string;
+    budgetId?: string; // Links to BudgetConfig.id
+    category?: string; // Legacy - will be migrated
     date: string;
     account: string;
     isRecurring?: boolean;
@@ -15,7 +16,9 @@ export interface Transaction {
 
 export interface BudgetConfig {
     id: string;
-    category: string;
+    name: string; // Display name (e.g., "Comida")
+    category: string; // Normalized key (e.g., "alimentacion")
+    icon: string; // Emoji icon
     limit: number;
     alerts?: number[]; // Percentages to trigger alerts
 }

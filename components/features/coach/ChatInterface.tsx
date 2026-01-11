@@ -21,7 +21,12 @@ interface ActionCommand {
 }
 
 export function ChatInterface() {
-    const { user, transactions, debts, goals, metrics, addTransaction, payDebt, learnFact, addGoal } = useFinancial(); // IMPORT payDebt, learnFact, addGoal
+    const {
+        user, transactions, debts, goals, metrics,
+        addTransaction, payDebt, learnFact, addGoal,
+        budgetConfigs, addBudget, updateBudget, deleteBudget,
+        getTotalBudgeted, getAvailableToAssign, getBudgetByCategory
+    } = useFinancial();
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -73,21 +78,30 @@ export function ChatInterface() {
             ? `\nMETAS ACTUALES:\n${goals.map(g => `- ID: ${g.id} | NOMBRE: ${g.name} | PROGRESO: ${formatCurrency(g.current)}/${formatCurrency(g.target)}`).join('\n')}`
             : "\nNO HAY METAS ACTIVAS.";
 
+        const budgetsBlock = budgetConfigs.length
+            ? `\nPRESUPUESTOS:\n${budgetConfigs.map(b => `- ${b.name}: Límite ${formatCurrency(b.limit)}`).join('\n')}`
+            : "\nNO HAY PRESUPUESTOS CONFIGURADOS.";
+
+        const budgetAvailable = getAvailableToAssign();
+
         const generateSystemPrompt = () => `
 ERES: FinanzasRD AI, coach financiero dominicano proactivo.
-OBJETIVO: Ayudar al usuario a progresar y aprender de él.
+OBJETIVO: Ayudar al usuario a progresar, gestionar presupuestos y aprender de él.
 
 CONTEXTO CLAVE:
+- Ingreso Mensual: ${formatCurrency(user.monthlyIncome || 0)}
+- Disponible para Asignar: ${formatCurrency(budgetAvailable)}
 - Deuda Total: ${formatCurrency(totalDebt)}
-- Disponible: ${formatCurrency(available)}
+- Disponible para Gastar: ${formatCurrency(available)}
 ${learnedFactsBlock}
 ${goalsBlock}
+${budgetsBlock}
 
 REGLAS:
 1. **BREVEDAD**: Máximo 2-3 oraciones.
-2. **REACTIVIDAD**: Si pide pagar deuda, verifica si tiene saldo.
-3. **MEMORIA**: Si detectas una preferencia clara (ej: "No me gustan los riesgos"), guárdala con command learn_fact.
-4. **ANTI-DUPLICACIÓN**: ANTES de crear una meta, REVISA "METAS ACTUALES". Si ya existe (aunque sea parecido), USA "TRANSFER_GOAL".
+2. **VALIDACIÓN INCOME CAP**: Si el usuario pide crear presupuesto y NO hay suficiente "Disponible para Asignar", recházalo con frase dominicana: "Manito, no te da la nota. Solo tienes RD$X libres." y ofrece alternativas.
+3. **MEMORIA**: Si detectas una preferencia clara, guárdala con command learn_fact.
+4. **ANTI-DUPLICACIÓN**: REVISA "METAS ACTUALES" y "PRESUPUESTOS" antes de crear.
 
 PROTOCOLO DE ACCIÓN (ESTRICTO):
 Usa [ACTION: JSON] para realizar cambios.
@@ -104,8 +118,17 @@ Usa [ACTION: JSON] para realizar cambios.
 4. CREAR META:
 [ACTION: {"type": "CREATE_GOAL", "payload": {"name":"TEXT", "target":NUMBER, "deadline":"ISO_DATE", "icon":"EMOJI"}}]
 
-5. ABONAR A META TRANSFIRIENDO:
+5. ABONAR A META:
 [ACTION: {"type": "TRANSFER_GOAL", "payload": {"amount":NUMBER, "goalName":"TEXT"}}]
+
+6. CREAR PRESUPUESTO (VALIDAR INCOME CAP PRIMERO):
+[ACTION: {"type": "CREATE_BUDGET", "payload": {"name":"TEXT", "limit":NUMBER, "icon":"EMOJI"}}]
+
+7. MODIFICAR PRESUPUESTO:
+[ACTION: {"type": "UPDATE_BUDGET", "payload": {"name":"TEXT", "limit":NUMBER, "icon":"EMOJI"}}]
+
+8. ELIMINAR PRESUPUESTO:
+[ACTION: {"type": "DELETE_BUDGET", "payload": {"name":"TEXT"}}]
 `;
 
         try {
@@ -260,6 +283,34 @@ Usa [ACTION: JSON] para realizar cambios.
                         date: new Date().toISOString(),
                         account: 'main'
                     });
+                }
+            } else if (action.type === 'CREATE_BUDGET') {
+                const available = getAvailableToAssign();
+                if (action.payload.limit > available) {
+                    console.warn(`[Coach AI] Budget creation rejected: limit ${action.payload.limit} > available ${available}`);
+                    // The AI should have already rejected this, log for debugging
+                } else {
+                    addBudget({
+                        name: action.payload.name,
+                        category: action.payload.name.toLowerCase().replace(/\s+/g, '_'),
+                        icon: action.payload.icon || '📦',
+                        limit: action.payload.limit,
+                        alerts: [80, 100]
+                    });
+                }
+            } else if (action.type === 'UPDATE_BUDGET') {
+                const targetBudget = getBudgetByCategory(action.payload.name);
+                if (targetBudget) {
+                    updateBudget(targetBudget.id, {
+                        limit: action.payload.limit,
+                        icon: action.payload.icon,
+                        name: action.payload.name
+                    });
+                }
+            } else if (action.type === 'DELETE_BUDGET') {
+                const targetBudget = getBudgetByCategory(action.payload.name);
+                if (targetBudget) {
+                    deleteBudget(targetBudget.id);
                 }
             }
 

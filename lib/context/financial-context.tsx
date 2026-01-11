@@ -47,8 +47,11 @@ interface FinancialContextType extends AppData {
     deleteDebt: (id: string) => void;
     payDebt: (id: string, amount: number) => void;
     updateDebt: (id: string, debt: Partial<Debt>) => void;
-    learnFact: (fact: string) => void; // NUEVO: Memoria
-    setBudget: (category: string, limit: number) => void; // Alias for AI
+    learnFact: (fact: string) => void;
+    setBudget: (category: string, limit: number) => void;
+    getTotalBudgeted: () => number;
+    getAvailableToAssign: () => number;
+    getBudgetByCategory: (category: string) => BudgetConfig | undefined;
     metrics: {
         totalIncome: number;
         totalExpenses: number;
@@ -430,37 +433,101 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         setData(prev => ({ ...prev, user: { ...prev.user, ...u } }));
     };
 
+    // --- BUDGET HELPERS ---
+    const DEFAULT_BUDGET_ID = 'otros-default';
 
+    const getTotalBudgeted = () => {
+        return data.budgetConfigs.reduce((sum, b) => sum + b.limit, 0);
+    };
+
+    const getAvailableToAssign = () => {
+        return (data.user.monthlyIncome || 0) - getTotalBudgeted();
+    };
+
+    const getBudgetByCategory = (category: string) => {
+        const normalized = category.toLowerCase().trim();
+        return data.budgetConfigs.find(b =>
+            b.category.toLowerCase() === normalized ||
+            b.name.toLowerCase() === normalized
+        );
+    };
+
+    // Ensure default "Otros" budget exists
+    const ensureDefaultBudget = () => {
+        if (!data.budgetConfigs.find(b => b.id === DEFAULT_BUDGET_ID)) {
+            setData(prev => ({
+                ...prev,
+                budgetConfigs: [...prev.budgetConfigs, {
+                    id: DEFAULT_BUDGET_ID,
+                    name: 'Otros',
+                    category: 'otros',
+                    icon: '📦',
+                    limit: 0,
+                    alerts: [100]
+                }]
+            }));
+        }
+    };
+
+    // Run once on mount
+    useEffect(() => {
+        ensureDefaultBudget();
+    }, []);
 
     const addBudget = (budget: Omit<BudgetConfig, 'id'>) => {
+        const available = getAvailableToAssign();
+        if (budget.limit > available) {
+            console.warn(`[Income Cap] Cannot add budget. Requested: ${budget.limit}, Available: ${available}`);
+            return false; // Could throw or return error
+        }
         const newBudget = { ...budget, id: Date.now().toString() };
         setData(prev => ({
             ...prev,
             budgetConfigs: [...prev.budgetConfigs, newBudget]
         }));
+        return true;
     };
 
     const updateBudget = (id: string, updates: Partial<BudgetConfig>) => {
+        // If updating limit, validate Income Cap
+        if (updates.limit !== undefined) {
+            const current = data.budgetConfigs.find(b => b.id === id);
+            if (current) {
+                const delta = updates.limit - current.limit;
+                const available = getAvailableToAssign();
+                if (delta > available) {
+                    console.warn(`[Income Cap] Cannot update budget. Delta: ${delta}, Available: ${available}`);
+                    return false;
+                }
+            }
+        }
         setData(prev => ({
             ...prev,
             budgetConfigs: prev.budgetConfigs.map(b => b.id === id ? { ...b, ...updates } : b)
         }));
+        return true;
     };
 
     const deleteBudget = (id: string) => {
-        setData(prev => ({
-            ...prev,
-            budgetConfigs: prev.budgetConfigs.filter(b => b.id !== id)
-        }));
+        if (id === DEFAULT_BUDGET_ID) {
+            console.warn('[Budget] Cannot delete default "Otros" budget');
+            return false;
+        }
+        setData(prev => {
+            // Migrate orphan transactions to default budget
+            const migratedTransactions = prev.transactions.map(t =>
+                t.budgetId === id ? { ...t, budgetId: DEFAULT_BUDGET_ID } : t
+            );
+            return {
+                ...prev,
+                transactions: migratedTransactions,
+                budgetConfigs: prev.budgetConfigs.filter(b => b.id !== id)
+            };
+        });
+        return true;
     };
 
-    // Alias for AI/Legacy compatibility (if needed, but better to enforce new API)
-    // We'll keep a legacy wrapper if strict compatibility is needed, 
-    // but the request implies refactoring.
-    // However, existing calls might break. Checking usages...
-    // Only usage seems to be `addTransaction` (read-only) and maybe `ChatInterface`?
-    // User asked to "Consumir budget context... addBudget...".
-    // I will remove the old `updateBudget` signature.
+    // Legacy alias for AI/compatibility (creates or updates by category name)
 
     const updateGoal = (id: number, updates: Partial<Goal>) => {
         setData(prev => {
@@ -528,12 +595,23 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             payDebt,
             learnFact,
             alertSystem: data.notifications,
+            getTotalBudgeted,
+            getAvailableToAssign,
+            getBudgetByCategory,
             setBudget: (cat, lim) => {
-                // Compatibility shim for AI or other components that might use strict signature
-                // Use a find-or-create logic
-                const exists = data.budgetConfigs.find(b => b.category === cat);
-                if (exists) updateBudget(exists.id, { limit: lim });
-                else addBudget({ category: cat, limit: lim, alerts: [80, 100] });
+                // Legacy AI compatibility - creates or updates by category name
+                const exists = getBudgetByCategory(cat);
+                if (exists) {
+                    updateBudget(exists.id, { limit: lim });
+                } else {
+                    addBudget({
+                        name: cat,
+                        category: cat.toLowerCase().replace(/\s+/g, '_'),
+                        icon: '📦',
+                        limit: lim,
+                        alerts: [80, 100]
+                    });
+                }
             }
         }}>
             {children}
