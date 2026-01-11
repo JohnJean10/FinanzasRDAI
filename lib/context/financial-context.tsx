@@ -64,6 +64,7 @@ interface FinancialContextType extends AppData {
     setTimeRange: (range: TimeRange) => void;
     isTransactionModalOpen: boolean;
     openTransactionModal: () => void;
+    alertSystem: Notification[];
     closeTransactionModal: () => void;
 }
 
