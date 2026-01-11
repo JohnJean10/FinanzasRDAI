@@ -10,7 +10,9 @@ import {
     FileText,
     Settings,
     Menu,
-    ArrowRightLeft
+    ArrowRightLeft,
+    Target,
+    BarChart3
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -20,9 +22,11 @@ import { AlertNotificationCenter } from "@/components/features/planning/AlertSys
 const MENU_ITEMS = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Transacciones", href: "/transactions", icon: ArrowRightLeft },
-    { name: "Coach IA", href: "/coach", icon: MessageSquare },
-    { name: "Planificación", href: "/planning", icon: Map },
+    { name: "Presupuestos", href: "/planning", icon: Map },
+    { name: "Metas y Ahorros", href: "/savings", icon: Target },
+    { name: "Inversiones", href: "/investments", icon: BarChart3 },
     { name: "Deudas", href: "/debts", icon: CreditCard },
+    { name: "Coach IA", href: "/coach", icon: MessageSquare },
     { name: "Reportes", href: "/reports", icon: FileText },
 ];
 
