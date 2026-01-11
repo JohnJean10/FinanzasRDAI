@@ -32,11 +32,11 @@ export function RecentTransactions() {
                                     ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
                                     : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                                 }`}>
-                                {t.category.substring(0, 2).toUpperCase()}
+                                {(t.category || 'OT').substring(0, 2).toUpperCase()}
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate max-w-[120px]" title={t.description}>
-                                    {t.description || t.category}
+                                    {t.description || t.category || 'Sin categoría'}
                                 </p>
                                 <p className="text-xs text-slate-400">
                                     {new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00').toLocaleDateString('es-DO')}
