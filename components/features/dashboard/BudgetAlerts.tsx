@@ -52,7 +52,7 @@ export function BudgetAlerts() {
         // Filter out savings from expenses (assuming type='expense' & category='ahorro'/'inversion'/'meta')
         const allExpenses = currentTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const savingsNodes = currentTx
-            .filter(t => t.type === 'expense' && ['ahorro', 'inversion', 'meta', 'ahorros'].includes(t.category))
+            .filter(t => t.type === 'expense' && ['ahorro', 'inversion', 'meta', 'ahorros'].includes(t.category || ''))
             .reduce((acc, t) => acc + t.amount, 0);
 
         const realExpenses = allExpenses - savingsNodes;
@@ -113,8 +113,8 @@ export function BudgetAlerts() {
                 >
                     <div className="flex gap-3">
                         <div className={`p-2 rounded-full h-fit ${alert.type === 'success'
-                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                             }`}>
                             <AlertTriangle size={20} />
                         </div>

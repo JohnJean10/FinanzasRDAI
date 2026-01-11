@@ -13,7 +13,7 @@ export function InsightWidget() {
     const currentTx = transactions.filter(t => new Date(t.date).getMonth() === currentMonth);
     const income = currentTx.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
     // Filter out savings/investments from "Expenses" (Consumption)
-    const isConsumption = (t: any) => t.type === 'expense' && !['ahorro', 'inversion', 'meta'].includes(t.category);
+    const isConsumption = (t: any) => t.type === 'expense' && !['ahorro', 'inversion', 'meta'].includes(t.category || '');
 
     const expenses = currentTx.filter(isConsumption).reduce((acc, t) => acc + t.amount, 0);
     const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
@@ -22,7 +22,8 @@ export function InsightWidget() {
     const categoryTotals = currentTx
         .filter(isConsumption)
         .reduce((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            const key = t.budgetId || t.category || 'otros';
+            acc[key] = (acc[key] || 0) + t.amount;
             return acc;
         }, {} as Record<string, number>);
 
