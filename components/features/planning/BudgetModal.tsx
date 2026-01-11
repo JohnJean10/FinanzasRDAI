@@ -11,7 +11,7 @@ interface BudgetModalProps {
 }
 
 export function BudgetModal({ isOpen, onClose }: BudgetModalProps) {
-    const { budgetConfigs, updateBudget, user, goals } = useFinancial(); // destructure goals
+    const { budgetConfigs, setBudget, user, goals } = useFinancial(); // destructure goals
     const { formatCurrency } = require("@/lib/utils");
 
     // Calculate Committed Savings from Goals
@@ -58,7 +58,7 @@ export function BudgetModal({ isOpen, onClose }: BudgetModalProps) {
     const handleSave = () => {
         Object.entries(limits).forEach(([category, limit]) => {
             if (limit > 0) {
-                updateBudget(category, limit);
+                setBudget(category, limit);
             }
         });
         onClose();
