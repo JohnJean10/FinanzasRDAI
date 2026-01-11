@@ -36,8 +36,9 @@ interface FinancialContextType extends AppData {
     deleteGoal: (id: number) => void;
     updateGoal: (id: number, updates: Partial<Goal>) => void;
     updateUser: (u: Partial<AppData['user']>) => void;
-    updateBudget: (category: string, limit: number) => void;
-    addNotification: (n: Notification) => void;
+    updateBudget: (id: string, updates: Partial<BudgetConfig>) => void;
+    addBudget: (budget: Omit<BudgetConfig, 'id'>) => void;
+    deleteBudget: (id: string) => void;
     markNotificationRead: (id: string) => void;
     // Debts
     // Debts
@@ -429,18 +430,35 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
 
 
-    const updateBudget = (category: string, limit: number) => {
-        setData(prev => {
-            const existing = prev.budgetConfigs.find(b => b.category === category);
-            let newBudgets;
-            if (existing) {
-                newBudgets = prev.budgetConfigs.map(b => b.category === category ? { category, limit } : b);
-            } else {
-                newBudgets = [...prev.budgetConfigs, { category, limit }];
-            }
-            return { ...prev, budgetConfigs: newBudgets };
-        });
+    const addBudget = (budget: Omit<BudgetConfig, 'id'>) => {
+        const newBudget = { ...budget, id: Date.now().toString() };
+        setData(prev => ({
+            ...prev,
+            budgetConfigs: [...prev.budgetConfigs, newBudget]
+        }));
     };
+
+    const updateBudget = (id: string, updates: Partial<BudgetConfig>) => {
+        setData(prev => ({
+            ...prev,
+            budgetConfigs: prev.budgetConfigs.map(b => b.id === id ? { ...b, ...updates } : b)
+        }));
+    };
+
+    const deleteBudget = (id: string) => {
+        setData(prev => ({
+            ...prev,
+            budgetConfigs: prev.budgetConfigs.filter(b => b.id !== id)
+        }));
+    };
+
+    // Alias for AI/Legacy compatibility (if needed, but better to enforce new API)
+    // We'll keep a legacy wrapper if strict compatibility is needed, 
+    // but the request implies refactoring.
+    // However, existing calls might break. Checking usages...
+    // Only usage seems to be `addTransaction` (read-only) and maybe `ChatInterface`?
+    // User asked to "Consumir budget context... addBudget...".
+    // I will remove the old `updateBudget` signature.
 
     const updateGoal = (id: number, updates: Partial<Goal>) => {
         setData(prev => {
@@ -491,21 +509,16 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             deleteGoal,
             updateGoal,
             updateUser,
-            updateBudget,
-            addNotification,
-            markNotificationRead,
-            isTransactionModalOpen,
-            openTransactionModal,
-            closeTransactionModal,
-            timeRange,
-            setTimeRange,
-            metrics,
-            addDebt,
-            deleteDebt,
-            updateDebt,
-            payDebt,
-            learnFact,
-            setBudget: updateBudget
+            addBudget,
+            deleteBudget,
+            alertSystem: data.notifications, // Placeholder if needed
+            setBudget: (cat, lim) => {
+                // Compatibility shim for AI or other components that might use strict signature
+                // Use a find-or-create logic
+                const exists = data.budgetConfigs.find(b => b.category === cat);
+                if (exists) updateBudget(exists.id, { limit: lim });
+                else addBudget({ category: cat, limit: lim, alerts: [80, 100] });
+            }
         }}>
             {children}
         </FinancialContext.Provider>

@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 };
 
 import { OnboardingGuard } from "@/components/auth/OnboardingGuard";
+import { AlertProvider } from "@/components/features/planning/AlertSystem";
 
 export default function RootLayout({
   children,
@@ -33,22 +34,23 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FinancialProvider>
-            <OnboardingGuard>
-              <Sidebar />
-              <main className="lg:pl-64 min-h-screen transition-all duration-200">
-                {children}
-              </main>
-              {/* Global Components */}
-              <GlobalAddButton />
-              <GlobalCoachWidget />
-              <AddTransactionModal />
-            </OnboardingGuard>
+            <AlertProvider>
+              <OnboardingGuard>
+                <Sidebar />
+                <main className="lg:pl-64 min-h-screen transition-all duration-200">
+                  {children}
+                </main>
+                {/* Global Components */}
+                <GlobalAddButton />
+                <GlobalCoachWidget />
+                <AddTransactionModal />
+              </OnboardingGuard>
+            </AlertProvider>
           </FinancialProvider>
         </ThemeProvider>
       </body>
     </html>
   );
-}
 
 
 

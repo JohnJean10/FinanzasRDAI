@@ -14,8 +14,10 @@ export interface Transaction {
 }
 
 export interface BudgetConfig {
+    id: string;
     category: string;
     limit: number;
+    alerts?: number[]; // Percentages to trigger alerts
 }
 
 export interface Goal {

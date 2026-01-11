@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { AlertNotificationCenter } from "@/components/features/planning/AlertSystem";
 
 const MENU_ITEMS = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -97,6 +98,7 @@ export function Sidebar() {
                             <Settings size={18} />
                             <span>Configuración</span>
                         </Link>
+                        <AlertNotificationCenter />
                         <ModeToggle />
                     </div>
                 </div>
