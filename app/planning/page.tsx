@@ -1,7 +1,7 @@
 import { EmergencyFund } from "@/components/features/education/EmergencyFund";
 import { InvestmentGuide } from "@/components/features/education/InvestmentGuide";
 import { GoalsContainer } from "@/components/features/planning/GoalsContainer";
-import { BudgetContainer } from "@/components/features/planning/BudgetContainer";
+import BudgetManager from "@/components/features/planning/BudgetManager";
 
 export default function PlanningPage() {
     return (
@@ -15,11 +15,11 @@ export default function PlanningPage() {
             {/* Advanced Emergency Fund Analysis */}
             <EmergencyFund />
 
-            {/* Two Column Layout for Goals and Budgets */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <GoalsContainer />
-                <BudgetContainer />
-            </div>
+            {/* Budget Manager - Full Width */}
+            <BudgetManager />
+
+            {/* Goals Section */}
+            <GoalsContainer />
 
             {/* Educational Investment Section */}
             <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
