@@ -28,7 +28,8 @@ export function CoachSummaryWidget() {
     const categoryTotals = currentTransactions
         .filter(t => t.type === 'expense' && t.category !== 'ahorro')
         .reduce((acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            const key = t.budgetId || t.category || 'otros';
+            acc[key] = (acc[key] || 0) + t.amount;
             return acc;
         }, {} as Record<string, number>);
 
