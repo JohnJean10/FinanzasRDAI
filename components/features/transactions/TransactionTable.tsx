@@ -73,7 +73,7 @@ export function TransactionTable({ onEdit, data }: TransactionTableProps) {
                                 </td>
                                 <td className="p-4">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 capitalize">
-                                        {t.category.replace('_', ' ')}
+                                        {(t.category ?? 'Sin categoría').replace('_', ' ')}
                                     </span>
                                 </td>
                                 <td className="p-4 text-slate-500 dark:text-slate-400 text-xs">
