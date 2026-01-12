@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { Account } from "@/lib/types";
-import { Plus, Wallet, CreditCard, Building2, PiggyBank, Landmark, MoreVertical, Pencil, Trash2, X, Save } from "lucide-react";
+import { Plus, Wallet, CreditCard, Building2, PiggyBank, Landmark, MoreVertical, Pencil, Trash2, X, Save, Star } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 // Icon mapping for account types
@@ -24,7 +24,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function AccountsPage() {
-    const { accounts, netWorth, addAccount, updateAccount, deleteAccount, getDefaultAccount } = useFinancial();
+    const { accounts, netWorth, addAccount, updateAccount, deleteAccount, getDefaultAccount, setDefaultAccount } = useFinancial();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -118,8 +118,8 @@ export default function AccountsPage() {
                     <div
                         key={account.id}
                         className={`relative bg-white dark:bg-slate-900 rounded-2xl p-5 border transition-all hover:shadow-lg group ${account.isDefault
-                                ? 'border-blue-300 dark:border-blue-700 ring-2 ring-blue-100 dark:ring-blue-900/50'
-                                : 'border-slate-200 dark:border-slate-800'
+                            ? 'border-blue-300 dark:border-blue-700 ring-2 ring-blue-100 dark:ring-blue-900/50'
+                            : 'border-slate-200 dark:border-slate-800'
                             }`}
                     >
                         {/* Default Badge */}
@@ -139,13 +139,24 @@ export default function AccountsPage() {
 
                         {/* Dropdown Menu */}
                         {menuOpen === account.id && (
-                            <div className="absolute top-10 right-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-10 py-1 min-w-[120px]">
+                            <div className="absolute top-10 right-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-10 py-1 min-w-[180px]">
                                 <button
                                     onClick={() => handleEdit(account)}
                                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                                 >
                                     <Pencil size={14} /> Editar
                                 </button>
+                                {!account.isDefault && (
+                                    <button
+                                        onClick={() => {
+                                            setDefaultAccount(account.id);
+                                            setMenuOpen(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                    >
+                                        <Star size={14} /> Establecer como Principal
+                                    </button>
+                                )}
                                 {!account.isDefault && (
                                     <button
                                         onClick={() => handleDelete(account.id)}
@@ -177,8 +188,8 @@ export default function AccountsPage() {
                                     {account.type === 'credit' ? 'Deuda Consumida' : 'Saldo Disponible'}
                                 </span>
                                 <span className={`text-2xl font-bold ${account.type === 'credit'
-                                        ? (account.balance > 0 ? 'text-red-600' : 'text-emerald-600')
-                                        : (account.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600')
+                                    ? (account.balance > 0 ? 'text-red-600' : 'text-emerald-600')
+                                    : (account.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600')
                                     }`}>
                                     {account.type === 'credit' && account.balance > 0 && '-'}
                                     {formatCurrency(Math.abs(account.balance))}
@@ -311,8 +322,8 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                                     type="button"
                                     onClick={() => setFormData({ ...formData, icon })}
                                     className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all ${formData.icon === icon
-                                            ? 'bg-blue-100 dark:bg-blue-900 ring-2 ring-blue-500'
-                                            : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                        ? 'bg-blue-100 dark:bg-blue-900 ring-2 ring-blue-500'
+                                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
                                         }`}
                                 >
                                     {icon}

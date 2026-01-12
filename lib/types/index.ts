@@ -79,6 +79,9 @@ export interface Debt {
     // Específico de Préstamos
     endDate?: string; // Fecha fin acuerdo
     isAmortized?: boolean; // True = Banco, False = Prestamista (solo interés)
+
+    // Link to Account (for credit cards synced from Accounts module)
+    linkedAccountId?: string;
 }
 
 export type TimeRange =

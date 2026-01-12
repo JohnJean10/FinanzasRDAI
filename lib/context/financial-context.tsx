@@ -68,6 +68,7 @@ interface FinancialContextType extends AppData {
     deleteAccount: (id: string) => void;
     getAccountById: (id: string) => Account | undefined;
     getDefaultAccount: () => Account | undefined;
+    setDefaultAccount: (id: string) => void;  // NEW: Change principal account
     // Debts
     addDebt: (debt: Omit<Debt, 'id'>) => void;
     deleteDebt: (id: string) => void;
@@ -342,6 +343,79 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         }
     }, [data.transactions]);
 
+    // --- CREDIT CARD TO DEBTS AUTO-SYNC ---
+    // When credit cards are added/updated, automatically sync them to the debts module
+    useEffect(() => {
+        if (!isDataLoaded) return;
+
+        const creditAccounts = data.accounts.filter(a => a.type === 'credit');
+
+        setData(prev => {
+            let updated = false;
+            let newDebts = [...prev.debts];
+
+            creditAccounts.forEach(card => {
+                // Use a predictable ID based on account ID for linking
+                const linkedDebtId = `debt-from-account-${card.id}`;
+                const existingDebt = newDebts.find(d => d.id === linkedDebtId);
+
+                if (existingDebt) {
+                    // Update existing debt if card data changed
+                    if (existingDebt.currentBalance !== card.balance ||
+                        existingDebt.creditLimit !== card.limit ||
+                        existingDebt.name !== card.name) {
+                        newDebts = newDebts.map(d =>
+                            d.id === linkedDebtId
+                                ? {
+                                    ...d,
+                                    name: card.name,
+                                    currentBalance: card.balance,
+                                    creditLimit: card.limit,
+                                    availableBalance: (card.limit || 0) - card.balance
+                                }
+                                : d
+                        );
+                        updated = true;
+                    }
+                } else if (card.balance > 0 || card.limit) {
+                    // Create new debt entry for this credit card
+                    const newDebt = {
+                        id: linkedDebtId,
+                        type: 'credit_card' as const,
+                        name: card.name,
+                        currentBalance: card.balance,
+                        interestRate: 0, // User can edit in debts page
+                        minPayment: 0,
+                        category: 'debt',
+                        creditLimit: card.limit,
+                        availableBalance: (card.limit || 0) - card.balance,
+                        // Link back to account
+                        linkedAccountId: card.id
+                    };
+                    newDebts.push(newDebt);
+                    updated = true;
+                }
+            });
+
+            // Remove debts for deleted credit cards
+            const creditAccountIds = creditAccounts.map(c => c.id);
+            const orphanedDebts = newDebts.filter(d =>
+                d.id.startsWith('debt-from-account-') &&
+                !creditAccountIds.includes(d.id.replace('debt-from-account-', ''))
+            );
+            if (orphanedDebts.length > 0) {
+                newDebts = newDebts.filter(d => !orphanedDebts.includes(d));
+                updated = true;
+            }
+
+            if (updated) {
+                console.log("💳 Credit Card Sync: Updated debts from credit accounts");
+                return { ...prev, debts: newDebts };
+            }
+            return prev;
+        });
+    }, [data.accounts, isDataLoaded]);
+
     const addNotification = (n: Notification) => {
         setData(prev => ({ ...prev, notifications: [n, ...prev.notifications] }));
     };
@@ -613,6 +687,17 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         return data.accounts.find(a => a.isDefault) || data.accounts[0];
     };
 
+    // Set any account as the default/principal account
+    const setDefaultAccount = (id: string) => {
+        setData(prev => ({
+            ...prev,
+            accounts: prev.accounts.map(a => ({
+                ...a,
+                isDefault: a.id === id
+            }))
+        }));
+    };
+
     // --- Helper: Update Account Balance ---
     const updateAccountBalance = (accountId: string, delta: number) => {
         setData(prev => ({
@@ -778,6 +863,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             deleteAccount,
             getAccountById,
             getDefaultAccount,
+            setDefaultAccount,
             // Metrics
             netWorth,
             isTransactionModalOpen,
