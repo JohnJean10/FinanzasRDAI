@@ -257,7 +257,8 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
         // Investment/Savings fields
         interestRate: "",
         maturityDate: "",
-        investmentType: "savings" as 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other',
+        investmentType: "certificate" as 'certificate' | 'stocks' | 'mutual_fund' | 'other', // Default changed, savings removed
+        bankType: "checking" as 'checking' | 'savings', // NEW field
         // Credit Card fields
         minPayment: "",
         paymentFrequency: "monthly" as 'weekly' | 'biweekly' | 'monthly',
@@ -278,7 +279,8 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                 icon: editingAccount.icon || "🏦",
                 interestRate: editingAccount.interestRate?.toString() || "",
                 maturityDate: editingAccount.maturityDate || "",
-                investmentType: editingAccount.investmentType || "savings",
+                investmentType: (editingAccount.investmentType === 'savings' ? 'certificate' : editingAccount.investmentType) || "certificate",
+                bankType: editingAccount.bankType || "checking",
                 minPayment: editingAccount.minPayment?.toString() || "",
                 paymentFrequency: editingAccount.paymentFrequency || "monthly",
                 overdraftLimit: editingAccount.overdraftLimit?.toString() || "",
@@ -300,8 +302,10 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
             limit: formData.type === 'credit' ? parseFloat(formData.limit) || undefined : undefined,
             currency: formData.currency,
             icon: formData.icon,
+            // Bank specific
+            bankType: formData.type === 'bank' ? formData.bankType : undefined,
             // Investment/Savings fields
-            interestRate: (formData.type === 'investment' || formData.type === 'bank' || formData.type === 'credit') && formData.interestRate
+            interestRate: (formData.type === 'investment' || (formData.type === 'bank' && formData.bankType === 'savings') || formData.type === 'credit') && formData.interestRate
                 ? parseFloat(formData.interestRate) : undefined,
             maturityDate: formData.type === 'investment' && formData.investmentType === 'certificate' && formData.maturityDate
                 ? formData.maturityDate : undefined,
@@ -322,8 +326,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
 
         onClose();
         // Reset form
-        // Reset form
-        setFormData({ name: "", type: "bank", balance: "", limit: "", currency: "DOP", icon: "🏦", interestRate: "", maturityDate: "", investmentType: "savings", minPayment: "", paymentFrequency: "monthly", overdraftLimit: "", cutoffDay: "", paymentDay: "" });
+        setFormData({ name: "", type: "bank", balance: "", limit: "", currency: "DOP", icon: "🏦", interestRate: "", maturityDate: "", investmentType: "certificate", bankType: "checking", minPayment: "", paymentFrequency: "monthly", overdraftLimit: "", cutoffDay: "", paymentDay: "" });
     };
 
     const ICONS = ["💵", "🏦", "💳", "📱", "💰", "🏧", "💎", "🪙"];
@@ -420,8 +423,40 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                         </div>
                     </div>
 
+                    {/* Bank Type Selector (only for bank) */}
+                    {formData.type === 'bank' && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Tipo de Cuenta Bancaria</label>
+                            <select
+                                value={formData.bankType}
+                                onChange={e => setFormData({ ...formData, bankType: e.target.value as any })}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
+                            >
+                                <option value="checking">💳 Cuenta Corriente (Cheques)</option>
+                                <option value="savings">💰 Cuenta de Ahorro</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Investment Type Selector (only for investments) */}
+                    {formData.type === 'investment' && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Tipo de Inversión</label>
+                            <select
+                                value={formData.investmentType}
+                                onChange={e => setFormData({ ...formData, investmentType: e.target.value as any })}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
+                            >
+                                <option value="certificate">📜 Certificado Financiero</option>
+                                <option value="stocks">📈 Acciones (Stocks)</option>
+                                <option value="mutual_fund">🤝 Fondo Mutuo</option>
+                                <option value="other">💎 Otro</option>
+                            </select>
+                        </div>
+                    )}
+
                     {/* Interest Rate (for investments, bank savings, and CREDIT CARDS) */}
-                    {(formData.type === 'investment' || formData.type === 'bank' || formData.type === 'credit') && (
+                    {(formData.type === 'investment' || (formData.type === 'bank' && formData.bankType === 'savings') || formData.type === 'credit') && (
                         <div className="animate-in fade-in slide-in-from-top-2 mb-4">
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
                                 {formData.type === 'credit' ? 'Tasa Anual Real (%)' : 'Tasa de Interés Anual (%)'}
@@ -431,7 +466,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                                 step="0.01"
                                 value={formData.interestRate}
                                 onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
-                                placeholder="Ej: 40"
+                                placeholder={formData.type === 'credit' ? "Ej: 60.00" : "Ej: 5.50"}
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
                             />
                         </div>
@@ -492,26 +527,25 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
                             >
                                 <option value="certificate">📜 Certificado Financiero</option>
-                                <option value="savings">💰 Cuenta de Ahorro</option>
-                                <option value="stocks">📊 Acciones</option>
-                                <option value="mutual_fund">📈 Fondo Mutuo</option>
-                                <option value="other">📁 Otro</option>
+                                <option value="stocks">📈 Acciones (Stocks)</option>
+                                <option value="mutual_fund">🤝 Fondo Mutuo</option>
+                                <option value="other">💎 Otro</option>
                             </select>
                         </div>
                     )}
 
-                    {/* Interest Rate (for investments and bank savings - CREDIT CARDS handled above) */}
-                    {(formData.type === 'investment' || formData.type === 'bank') && (
-                        <div className="animate-in fade-in slide-in-from-top-2">
+                    {/* Interest Rate (for investments, bank savings, and CREDIT CARDS) */}
+                    {(formData.type === 'investment' || (formData.type === 'bank' && formData.bankType === 'savings') || formData.type === 'credit') && (
+                        <div className="animate-in fade-in slide-in-from-top-2 mb-4">
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                                Tasa de Interés Anual (%)
+                                {formData.type === 'credit' ? 'Tasa Anual Real (%)' : 'Tasa de Interés Anual (%)'}
                             </label>
                             <input
                                 type="number"
                                 step="0.01"
                                 value={formData.interestRate}
                                 onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
-                                placeholder="Ej: 8.5"
+                                placeholder={formData.type === 'credit' ? "Ej: 60.00" : "Ej: 5.50"}
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
                             />
                         </div>

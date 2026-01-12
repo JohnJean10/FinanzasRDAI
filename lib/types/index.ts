@@ -18,6 +18,9 @@ export interface Account {
     maturityDate?: string;           // Fecha de vencimiento (ISO) - para certificados
     investmentType?: 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other'; // Subtipo
 
+    // Bank specific fields
+    bankType?: 'checking' | 'savings'; // NEW: Separates Checking (Corriente) vs Savings (Ahorro)
+
     // Credit Card specific fields (Synced to Debts)
     minPayment?: number;
     paymentFrequency?: 'weekly' | 'biweekly' | 'monthly';
