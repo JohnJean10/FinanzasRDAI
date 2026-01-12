@@ -236,7 +236,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Pago a ${targetDebt.name}`,
                         date: new Date().toISOString(),
-                        account: 'payment'
+                        accountId: undefined // Usa cuenta por defecto
                     });
                 } else {
                     addTransaction({
@@ -245,7 +245,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Pago Deuda: ${action.payload.debtName}`,
                         date: new Date().toISOString(),
-                        account: 'payment'
+                        accountId: undefined // Usa cuenta por defecto
                     });
                 }
             } else if (action.type === 'LEARN_FACT') {
@@ -270,7 +270,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Ahorro para meta: ${targetGoal.name}`,
                         date: new Date().toISOString(),
-                        account: 'main',
+                        accountId: undefined, // Usa cuenta por defecto
                         goalId: targetGoal.id
                     });
                 } else {
@@ -281,7 +281,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Ahorro General: ${targetName}`,
                         date: new Date().toISOString(),
-                        account: 'main'
+                        accountId: undefined // Usa cuenta por defecto
                     });
                 }
             } else if (action.type === 'CREATE_BUDGET') {

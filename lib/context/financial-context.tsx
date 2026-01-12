@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { AppData, Transaction, Goal, Debt, BudgetConfig, TimeRange } from '../types';
+import { AppData, Transaction, Goal, Debt, BudgetConfig, TimeRange, Account } from '../types';
 import { NotificationService, Notification } from '../services/notifications';
 import { getBudgetMonthDate, processRecurringTransactions } from '../utils';
 
@@ -21,6 +21,27 @@ const INITIAL_DATA: AppData = {
             debtReminders: true
         }
     },
+    // SEED ACCOUNTS - Initial accounts for new users
+    accounts: [
+        {
+            id: 'account-cash-1',
+            name: 'Efectivo / Cartera',
+            type: 'cash',
+            balance: 0,
+            currency: 'DOP',
+            icon: '💵',
+            isDefault: true
+        },
+        {
+            id: 'account-bank-1',
+            name: 'Banco General',
+            type: 'bank',
+            balance: 0,
+            currency: 'DOP',
+            brand: 'other',
+            icon: '🏦'
+        }
+    ],
     transactions: [],
     budgetConfigs: [],
     goals: [],
@@ -41,7 +62,12 @@ interface FinancialContextType extends AppData {
     deleteBudget: (id: string) => void;
     addNotification: (n: Notification) => void;
     markNotificationRead: (id: string) => void;
-    // Debts
+    // Accounts
+    addAccount: (account: Omit<Account, 'id'>) => void;
+    updateAccount: (id: string, updates: Partial<Account>) => void;
+    deleteAccount: (id: string) => void;
+    getAccountById: (id: string) => Account | undefined;
+    getDefaultAccount: () => Account | undefined;
     // Debts
     addDebt: (debt: Omit<Debt, 'id'>) => void;
     deleteDebt: (id: string) => void;
@@ -52,6 +78,8 @@ interface FinancialContextType extends AppData {
     getTotalBudgeted: () => number;
     getAvailableToAssign: () => number;
     getBudgetByCategory: (category: string) => BudgetConfig | undefined;
+    // Metrics
+    netWorth: number;  // NEW: Assets - Credit Debt
     metrics: {
         totalIncome: number;
         totalExpenses: number;
@@ -233,6 +261,21 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
     }, [data.transactions, data.goals, timeRange]);
 
+    // --- NET WORTH CALCULATION (Patrimonio Neto) ---
+    const netWorth = useMemo(() => {
+        // Assets: Sum of all non-credit account balances
+        const assets = data.accounts
+            .filter(a => a.type !== 'credit')
+            .reduce((sum, a) => sum + a.balance, 0);
+
+        // Credit Debt: Sum of credit card balances (what's consumed = debt)
+        const creditDebt = data.accounts
+            .filter(a => a.type === 'credit')
+            .reduce((sum, a) => sum + a.balance, 0);
+
+        return assets - creditDebt;
+    }, [data.accounts]);
+
     // --- EMERGENCY FUND AUTO-SYNC ---
     useEffect(() => {
         const monthsOfPeace = data.user.monthsOfPeace || 3;
@@ -314,6 +357,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         let finalType = t.type;
         let finalCategory = t.category || '';
         let finalBudgetId: string | null = t.budgetId || null;
+        const finalAccountId = t.accountId || getDefaultAccount()?.id || 'account-cash-1';
 
         // === LÓGICA DE VINCULACIÓN INTELIGENTE ===
 
@@ -359,8 +403,48 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             type: finalType,
             category: finalCategory,
             budgetId: finalBudgetId,
+            accountId: finalAccountId,
             id: Date.now()
         } as Transaction;
+
+        // === BALANCE TRIGGER LOGIC ===
+        // Get the target account to determine if it's credit or debit
+        const targetAccount = data.accounts.find(a => a.id === finalAccountId);
+        const isCredit = targetAccount?.type === 'credit';
+
+        // Calculate balance delta based on transaction type and account type
+        let balanceDelta = 0;
+
+        if (finalType === 'transfer' && t.fromAccountId) {
+            // TRANSFER: Move money from one account to another
+            // This handles: paying credit card, moving between banks, etc.
+            const fromAccount = data.accounts.find(a => a.id === t.fromAccountId);
+            const fromIsCredit = fromAccount?.type === 'credit';
+
+            // From account: if credit, reduce debt; otherwise reduce balance
+            const fromDelta = fromIsCredit ? -t.amount : -t.amount;
+            // To account: if credit, reduce debt (payment); otherwise add balance
+            const toDelta = isCredit ? -t.amount : t.amount;
+
+            setData(prev => ({
+                ...prev,
+                transactions: [newTx, ...prev.transactions],
+                accounts: prev.accounts.map(a => {
+                    if (a.id === t.fromAccountId) return { ...a, balance: a.balance + fromDelta };
+                    if (a.id === finalAccountId) return { ...a, balance: Math.max(0, a.balance + toDelta) };
+                    return a;
+                })
+            }));
+            return;
+        } else if (finalType === 'income') {
+            // INCOME: Add to account (or reduce debt if credit card - rare but possible)
+            balanceDelta = isCredit ? -t.amount : t.amount;
+        } else if (finalType === 'expense' || finalType === 'saving') {
+            // EXPENSE/SAVING: 
+            // - For debit/cash: Reduce balance
+            // - For credit card: Increase balance (you're adding debt!)
+            balanceDelta = isCredit ? t.amount : -t.amount;
+        }
 
         // 1. Handle Budget Alert Check (usando ID para mayor precisión)
         if (finalType === 'expense' && finalCategory !== 'Ahorro') {
@@ -389,7 +473,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        // 2. Handle Savings Goal Update
+        // 2. Handle Savings Goal Update + Balance Update
         if (t.goalId) {
             setData(prev => ({
                 ...prev,
@@ -397,12 +481,23 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
                 // Force new array reference for goals to trigger updates
                 goals: prev.goals.map(g =>
                     g.id === t.goalId ? { ...g, current: g.current + t.amount } : g
+                ),
+                // Apply balance change to the account
+                accounts: prev.accounts.map(a =>
+                    a.id === finalAccountId ? { ...a, balance: a.balance + balanceDelta } : a
                 )
             }));
             return;
         }
 
-        setData(prev => ({ ...prev, transactions: [newTx, ...prev.transactions] }));
+        // 3. Standard transaction: Add to transactions + Update account balance
+        setData(prev => ({
+            ...prev,
+            transactions: [newTx, ...prev.transactions],
+            accounts: prev.accounts.map(a =>
+                a.id === finalAccountId ? { ...a, balance: a.balance + balanceDelta } : a
+            )
+        }));
     };
 
     const deleteTransaction = (id: number) => {
@@ -477,6 +572,55 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
     const updateUser = (u: Partial<AppData['user']>) => {
         setData(prev => ({ ...prev, user: { ...prev.user, ...u } }));
+    };
+
+    // --- ACCOUNT MANAGEMENT ---
+    const addAccount = (account: Omit<Account, 'id'>) => {
+        const newAccount: Account = {
+            ...account,
+            id: `account-${Date.now()}`
+        };
+        setData(prev => ({ ...prev, accounts: [...prev.accounts, newAccount] }));
+    };
+
+    const updateAccount = (id: string, updates: Partial<Account>) => {
+        setData(prev => ({
+            ...prev,
+            accounts: prev.accounts.map(a => a.id === id ? { ...a, ...updates } : a)
+        }));
+    };
+
+    const deleteAccount = (id: string) => {
+        // Get default account to migrate orphaned transactions
+        const defaultAccount = data.accounts.find(a => a.isDefault) || data.accounts[0];
+        const defaultAccountId = defaultAccount?.id || 'account-cash-1';
+
+        setData(prev => ({
+            ...prev,
+            // Migrate transactions from deleted account to default
+            transactions: prev.transactions.map(t =>
+                t.accountId === id ? { ...t, accountId: defaultAccountId } : t
+            ),
+            accounts: prev.accounts.filter(a => a.id !== id)
+        }));
+    };
+
+    const getAccountById = (id: string): Account | undefined => {
+        return data.accounts.find(a => a.id === id);
+    };
+
+    const getDefaultAccount = (): Account | undefined => {
+        return data.accounts.find(a => a.isDefault) || data.accounts[0];
+    };
+
+    // --- Helper: Update Account Balance ---
+    const updateAccountBalance = (accountId: string, delta: number) => {
+        setData(prev => ({
+            ...prev,
+            accounts: prev.accounts.map(a =>
+                a.id === accountId ? { ...a, balance: a.balance + delta } : a
+            )
+        }));
     };
 
     // --- BUDGET HELPERS ---
@@ -628,6 +772,14 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             deleteBudget,
             addNotification,
             markNotificationRead,
+            // Account Management
+            addAccount,
+            updateAccount,
+            deleteAccount,
+            getAccountById,
+            getDefaultAccount,
+            // Metrics
+            netWorth,
             isTransactionModalOpen,
             openTransactionModal,
             closeTransactionModal,
