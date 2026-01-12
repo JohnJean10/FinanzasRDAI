@@ -76,6 +76,7 @@ const FinancialContext = createContext<FinancialContextType | undefined>(undefin
 
 export function FinancialProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>(INITIAL_DATA);
+    const [isDataLoaded, setIsDataLoaded] = useState(false); // Bandera para evitar 'Otros Zombie'
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
     const [timeRange, setTimeRange] = useState<TimeRange>('thisMonth');
 
@@ -92,6 +93,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
                 console.error("Failed to load data", e);
             }
         }
+        setIsDataLoaded(true); // Marcar como cargado para evitar duplicación de 'Otros'
     }, []);
 
     useEffect(() => {
@@ -311,40 +313,34 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     const addTransaction = (t: Omit<Transaction, 'id'>) => {
         let finalType = t.type;
         let finalCategory = t.category || '';
-        let finalBudgetId = t.budgetId || '';
+        let finalBudgetId: string | null = t.budgetId || null;
 
-        // === ROBUST SYNC LOGIC ===
+        // === LÓGICA DE VINCULACIÓN INTELIGENTE ===
 
-        // Caso A: Trae budgetId → sincroniza category desde el presupuesto
-        if (finalBudgetId) {
-            const budget = data.budgetConfigs.find(b => b.id === finalBudgetId);
-            if (budget) {
-                finalCategory = budget.name; // Sincroniza el nombre visible
-            } else {
-                // budgetId inválido, asignar a 'Otros'
-                finalBudgetId = DEFAULT_BUDGET_ID;
-                finalCategory = 'Otros';
-            }
-        }
-        // Caso B: No trae ID pero trae category → buscar presupuesto por nombre
-        else if (finalCategory) {
-            const budget = data.budgetConfigs.find(b =>
-                b.name.toLowerCase() === finalCategory.toLowerCase() ||
-                b.category.toLowerCase() === finalCategory.toLowerCase()
+        // 1. Buscar por ID primero
+        let targetBudget = data.budgetConfigs.find(b => b.id === t.budgetId);
+
+        // 2. Si no hay ID válido, buscar por Nombre (Insensible a mayúsculas/espacios)
+        if (!targetBudget && finalCategory) {
+            const cleanName = finalCategory.trim().toLowerCase();
+            targetBudget = data.budgetConfigs.find(b =>
+                b.name.toLowerCase().trim() === cleanName ||
+                b.category.toLowerCase().trim() === cleanName
             );
-            if (budget) {
-                finalBudgetId = budget.id;
-                finalCategory = budget.name; // Normalizar al nombre oficial
-            } else {
-                // Categoría no existe como presupuesto → asignar a 'Otros'
-                finalBudgetId = DEFAULT_BUDGET_ID;
-                // Mantener la categoría escrita pero vincular a Otros
-            }
         }
-        // Caso C: Huérfana (sin budgetId ni category)
-        else {
-            finalBudgetId = DEFAULT_BUDGET_ID;
-            finalCategory = 'Otros';
+
+        // 3. Asignación Definitiva
+        // Si encontramos presupuesto, usamos SU nombre y SU id. Si no, respetamos lo que escribió el usuario.
+        if (targetBudget) {
+            finalCategory = targetBudget.name;
+            finalBudgetId = targetBudget.id;
+        } else {
+            // Sin presupuesto encontrado → queda como 'Sin Asignar' (null)
+            finalBudgetId = null;
+            // Si no tenía categoría, asignar texto por defecto
+            if (!finalCategory) {
+                finalCategory = 'Sin Categoría';
+            }
         }
 
         // CRITICAL LOGIC: If linked to a goal, FORCE it to be an expense
@@ -355,7 +351,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             const savingsBudget = data.budgetConfigs.find(b =>
                 b.name.toLowerCase() === 'ahorro' || b.category.toLowerCase() === 'ahorro'
             );
-            finalBudgetId = savingsBudget?.id || DEFAULT_BUDGET_ID;
+            finalBudgetId = savingsBudget?.id || null;
         }
 
         const newTx = {
@@ -519,10 +515,12 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Run once on mount
+    // Ejecutar SOLO después de cargar datos para evitar 'Otros Zombie'
     useEffect(() => {
-        ensureDefaultBudget();
-    }, []);
+        if (isDataLoaded) {
+            ensureDefaultBudget();
+        }
+    }, [isDataLoaded]);
 
     const addBudget = (budget: Omit<BudgetConfig, 'id'>) => {
         const available = getAvailableToAssign();
@@ -559,14 +557,11 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     };
 
     const deleteBudget = (id: string) => {
-        if (id === DEFAULT_BUDGET_ID) {
-            console.warn('[Budget] Cannot delete default "Otros" budget');
-            return false;
-        }
+        // DESBLOQUEADO: Ahora se puede borrar cualquier presupuesto, incluyendo 'Otros'
         setData(prev => {
-            // Migrate orphan transactions to default budget
+            // Transacciones huérfanas quedan con budgetId = null ('Sin Asignar')
             const migratedTransactions = prev.transactions.map(t =>
-                t.budgetId === id ? { ...t, budgetId: DEFAULT_BUDGET_ID } : t
+                t.budgetId === id ? { ...t, budgetId: null } : t
             );
             return {
                 ...prev,

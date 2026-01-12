@@ -1,12 +1,31 @@
+// === ACCOUNT TYPES ===
+export type AccountType = 'cash' | 'bank' | 'credit' | 'investment' | 'wallet';
+export type AccountBrand = 'visa' | 'mastercard' | 'popular' | 'banreservas' | 'bhd' | 'scotiabank' | 'apap' | 'other';
+
+export interface Account {
+    id: string;
+    name: string;                    // Ej: 'Popular Nómina', 'Visa BHD'
+    type: AccountType;
+    balance: number;                 // Saldo actual. En crédito = lo consumido (deuda)
+    limit?: number;                  // Solo crédito: Límite total
+    currency: 'DOP' | 'USD';
+    brand?: AccountBrand;            // Para logo/icono del banco o tarjeta
+    icon?: string;                   // Emoji alternativo
+    isDefault?: boolean;             // Cuenta por defecto para transacciones
+}
+
+// === TRANSACTION TYPES ===
 export interface Transaction {
     id: number;
-    type: 'income' | 'expense' | 'saving';
+    type: 'income' | 'expense' | 'saving' | 'transfer';
     description: string;
     amount: number;
-    budgetId?: string; // Links to BudgetConfig.id
+    budgetId?: string | null; // Links to BudgetConfig.id
     category?: string; // Legacy - will be migrated
     date: string;
-    account: string;
+    accountId: string;               // MANDATORY: Links to Account.id
+    account?: string;                // Legacy field for migration
+    fromAccountId?: string;          // For transfers: source account
     isRecurring?: boolean;
     frequency?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
     nextPaymentDate?: string;
@@ -92,6 +111,7 @@ import { Notification } from '../services/notifications';
 
 export interface AppData {
     user: UserProfile;
+    accounts: Account[];             // NEW: Bank accounts, cards, wallets
     transactions: Transaction[];
     budgetConfigs: BudgetConfig[];
     goals: Goal[];
