@@ -12,7 +12,8 @@ import {
     Menu,
     ArrowRightLeft,
     Target,
-    BarChart3
+    BarChart3,
+    Wallet
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import { AlertNotificationCenter } from "@/components/features/planning/AlertSys
 
 const MENU_ITEMS = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Cuentas", href: "/accounts", icon: Wallet },
     { name: "Transacciones", href: "/transactions", icon: ArrowRightLeft },
     { name: "Presupuestos", href: "/planning", icon: Map },
     { name: "Metas y Ahorros", href: "/savings", icon: Target },
