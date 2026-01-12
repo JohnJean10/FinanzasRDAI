@@ -12,6 +12,11 @@ export interface Account {
     brand?: AccountBrand;            // Para logo/icono del banco o tarjeta
     icon?: string;                   // Emoji alternativo
     isDefault?: boolean;             // Cuenta por defecto para transacciones
+
+    // Investment/Savings specific fields
+    interestRate?: number;           // Tasa de interés anual (%)
+    maturityDate?: string;           // Fecha de vencimiento (ISO) - para certificados
+    investmentType?: 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other'; // Subtipo
 }
 
 // === TRANSACTION TYPES ===

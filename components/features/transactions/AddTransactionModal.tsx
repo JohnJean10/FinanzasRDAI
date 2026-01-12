@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Save, Calendar, Repeat, CreditCard, PiggyBank } from "lucide-react";
+import { X, Save, Calendar, Repeat, CreditCard, PiggyBank, Wallet } from "lucide-react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { Transaction } from "@/lib/types";
 
@@ -21,7 +21,8 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
         budgetConfigs,
         addBudget,
         getAvailableToAssign,
-        getDefaultAccount
+        getDefaultAccount,
+        accounts
     } = useFinancial();
 
     const isVisible = propIsOpen !== undefined ? propIsOpen : isTransactionModalOpen;
@@ -354,6 +355,30 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    {/* Account Selector - "¿Con qué pagaste?" */}
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                            <Wallet size={14} />
+                            {formData.type === 'income' ? '¿A qué cuenta?' : '¿Con qué pagaste?'}
+                        </label>
+                        <select
+                            value={formData.accountId}
+                            onChange={e => setFormData({ ...formData, accountId: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm font-medium text-slate-900 dark:text-white"
+                        >
+                            <option value="">📍 Cuenta Principal ({getDefaultAccount()?.name || 'Sin definir'})</option>
+                            {accounts.filter(a => a.type !== 'investment').map(account => (
+                                <option key={account.id} value={account.id}>
+                                    {account.icon || '💳'} {account.name} ({account.currency})
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                            {formData.type === 'expense' && 'Si usaste tarjeta de crédito, se añadirá a tu deuda.'}
+                            {formData.type === 'income' && 'Selecciona dónde depositaste el dinero.'}
+                        </p>
                     </div>
 
                     {/* Recurrence Switch */}

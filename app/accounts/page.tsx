@@ -253,7 +253,11 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
         balance: "",
         limit: "",
         currency: "DOP" as "DOP" | "USD",
-        icon: "🏦"
+        icon: "🏦",
+        // Investment/Savings fields
+        interestRate: "",
+        maturityDate: "",
+        investmentType: "savings" as 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other'
     });
 
     // Populate form when editing
@@ -265,7 +269,10 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                 balance: editingAccount.balance.toString(),
                 limit: editingAccount.limit?.toString() || "",
                 currency: editingAccount.currency,
-                icon: editingAccount.icon || "🏦"
+                icon: editingAccount.icon || "🏦",
+                interestRate: editingAccount.interestRate?.toString() || "",
+                maturityDate: editingAccount.maturityDate || "",
+                investmentType: editingAccount.investmentType || "savings"
             });
         }
     });
@@ -281,7 +288,13 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
             balance: parseFloat(formData.balance) || 0,
             limit: formData.type === 'credit' ? parseFloat(formData.limit) || undefined : undefined,
             currency: formData.currency,
-            icon: formData.icon
+            icon: formData.icon,
+            // Investment/Savings fields
+            interestRate: (formData.type === 'investment' || formData.type === 'bank') && formData.interestRate
+                ? parseFloat(formData.interestRate) : undefined,
+            maturityDate: formData.type === 'investment' && formData.investmentType === 'certificate' && formData.maturityDate
+                ? formData.maturityDate : undefined,
+            investmentType: formData.type === 'investment' ? formData.investmentType : undefined
         };
 
         if (editingAccount) {
@@ -292,7 +305,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
 
         onClose();
         // Reset form
-        setFormData({ name: "", type: "bank", balance: "", limit: "", currency: "DOP", icon: "🏦" });
+        setFormData({ name: "", type: "bank", balance: "", limit: "", currency: "DOP", icon: "🏦", interestRate: "", maturityDate: "", investmentType: "savings" });
     };
 
     const ICONS = ["💵", "🏦", "💳", "📱", "💰", "🏧", "💎", "🪙"];
@@ -399,6 +412,56 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                                 value={formData.limit}
                                 onChange={e => setFormData({ ...formData, limit: e.target.value })}
                                 placeholder="Ej: 50000"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
+                            />
+                        </div>
+                    )}
+
+                    {/* Investment Type Selector (only for investments) */}
+                    {formData.type === 'investment' && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Tipo de Inversión</label>
+                            <select
+                                value={formData.investmentType}
+                                onChange={e => setFormData({ ...formData, investmentType: e.target.value as any })}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
+                            >
+                                <option value="certificate">📜 Certificado Financiero</option>
+                                <option value="savings">💰 Cuenta de Ahorro</option>
+                                <option value="stocks">📊 Acciones</option>
+                                <option value="mutual_fund">📈 Fondo Mutuo</option>
+                                <option value="other">📁 Otro</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Interest Rate (for investments and bank savings) */}
+                    {(formData.type === 'investment' || formData.type === 'bank') && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                Tasa de Interés Anual (%)
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={formData.interestRate}
+                                onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
+                                placeholder="Ej: 8.5"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
+                            />
+                        </div>
+                    )}
+
+                    {/* Maturity Date (only for certificates) */}
+                    {formData.type === 'investment' && formData.investmentType === 'certificate' && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                Fecha de Vencimiento
+                            </label>
+                            <input
+                                type="date"
+                                value={formData.maturityDate}
+                                onChange={e => setFormData({ ...formData, maturityDate: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
                             />
                         </div>
