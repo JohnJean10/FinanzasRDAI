@@ -196,54 +196,62 @@ export default function BudgetManager() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-
-      {/* Header with Assignment Bar */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-          <BarChart2 size={200} />
+    <div className="p-6 md:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <BarChart2 className="text-blue-600 dark:text-blue-400" />
+            Presupuestos
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            Distribuye tu ingreso en categorías para no comerte los cuartos.
+          </p>
         </div>
+        <button
+          onClick={() => availableToAssign > 0 && setIsAddingNew(true)}
+          disabled={availableToAssign <= 0}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors shadow-lg shadow-blue-500/10 ${availableToAssign > 0
+              ? 'bg-slate-900 dark:bg-blue-600 text-white hover:bg-slate-800 dark:hover:bg-blue-500'
+              : 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
+            }`}
+        >
+          <Plus size={18} />
+          Nuevo Presupuesto
+        </button>
+      </div>
 
-        <div className="relative z-10">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Presupuestos 🇩🇴</h1>
-          <p className="text-blue-100 mb-6 max-w-lg">Distribuye tu ingreso en categorías para no comerte los cuartos.</p>
-
-          {/* Assignment Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20">
-              <p className="text-xs text-blue-200 uppercase tracking-wider mb-1">Ingreso Mensual</p>
-              <p className="text-2xl font-bold">{formatCurrency(monthlyIncome)}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20">
-              <p className="text-xs text-blue-200 uppercase tracking-wider mb-1">Ya Asignado</p>
-              <p className="text-2xl font-bold">{formatCurrency(totalBudgeted)}</p>
-            </div>
-            <div className={`backdrop-blur-md rounded-2xl p-5 border ${availableToAssign > 0 ? 'bg-emerald-500/20 border-emerald-400/30' : 'bg-red-500/20 border-red-400/30'}`}>
-              <p className="text-xs uppercase tracking-wider mb-1 opacity-80">Disponible</p>
-              <p className="text-2xl font-bold">{formatCurrency(availableToAssign)}</p>
-            </div>
+      {/* Summary Card */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl">
+        <p className="text-blue-100 text-sm font-medium uppercase tracking-wider">Ingreso Mensual</p>
+        <p className="text-4xl font-bold mt-1">{formatCurrency(monthlyIncome)}</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xs text-blue-200">Ingreso Mensual</p>
+            <p className="text-lg font-bold">{formatCurrency(monthlyIncome)}</p>
           </div>
-
-          {/* Assignment Progress Bar */}
-          <div>
-            <div className="flex justify-between text-sm mb-2 opacity-90">
-              <span>Ingresos Asignados</span>
-              <span className="font-bold">{assignmentPercentage.toFixed(0)}%</span>
-            </div>
-            <div className="w-full h-4 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm border border-white/10">
-              <div
-                className={`h-full transition-all duration-700 ease-out ${assignmentPercentage >= 100 ? 'bg-red-400' :
-                    assignmentPercentage >= 80 ? 'bg-orange-400' :
-                      'bg-emerald-400'
-                  }`}
-                style={{ width: `${Math.min(assignmentPercentage, 100)}%` }}
-              />
-            </div>
-            {availableToAssign <= 0 && (
-              <p className="text-yellow-300 text-xs mt-2 flex items-center gap-1">
-                <Lock size={12} /> Todo tu ingreso está asignado
-              </p>
-            )}
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-xs text-blue-200">Ya Asignado</p>
+            <p className="text-lg font-bold">{formatCurrency(totalBudgeted)}</p>
+          </div>
+          <div className={`rounded-xl p-3 ${availableToAssign > 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
+            <p className="text-xs text-blue-200">Disponible</p>
+            <p className="text-lg font-bold">{formatCurrency(availableToAssign)}</p>
+          </div>
+        </div>
+        {/* Progress Bar */}
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-blue-200 mb-1">
+            <span>Ingresos Asignados</span>
+            <span>{assignmentPercentage.toFixed(0)}%</span>
+          </div>
+          <div className="h-2 bg-slate-100/20 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${assignmentPercentage >= 100 ? 'bg-red-500' :
+                  assignmentPercentage >= 80 ? 'bg-orange-500' : 'bg-emerald-400'
+                }`}
+              style={{ width: `${Math.min(assignmentPercentage, 100)}%` }}
+            />
           </div>
         </div>
       </div>
@@ -317,8 +325,8 @@ export default function BudgetManager() {
             onClick={() => availableToAssign > 0 && setIsAddingNew(true)}
             disabled={availableToAssign <= 0}
             className={`rounded-2xl border-3 border-dashed p-8 transition-all flex flex-col items-center justify-center gap-4 min-h-[250px] group ${availableToAssign > 0
-                ? 'border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer'
-                : 'border-slate-100 dark:border-slate-900 opacity-50 cursor-not-allowed'
+              ? 'border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer'
+              : 'border-slate-100 dark:border-slate-900 opacity-50 cursor-not-allowed'
               }`}
           >
             <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-transform ${availableToAssign > 0 ? 'bg-blue-100 dark:bg-blue-900 group-hover:scale-110' : 'bg-slate-100 dark:bg-slate-800'
