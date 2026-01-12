@@ -29,6 +29,7 @@ export interface Transaction {
     category?: string; // Legacy - will be migrated
     date: string;
     accountId: string;               // MANDATORY: Links to Account.id
+    toAccountId?: string;            // For transfers/savings: destination account
     account?: string;                // Legacy field for migration
     fromAccountId?: string;          // For transfers: source account
     isRecurring?: boolean;

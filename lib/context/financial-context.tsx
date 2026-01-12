@@ -461,9 +461,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        // CRITICAL LOGIC: If linked to a goal, FORCE it to be an expense
+        // CRITICAL LOGIC: If linked to a goal, FORCE it to be an expense (unless it's a transfer to another account)
         if (t.goalId || t.category === 'ahorro' || t.type === 'saving') {
-            finalType = 'expense';
+            // Only force to expense if no destination account is set (money leaves system)
+            finalType = (t.type === 'saving' && t.toAccountId) ? 'saving' : 'expense';
             finalCategory = 'Ahorro';
             // Buscar o usar un presupuesto de ahorro si existe
             const savingsBudget = data.budgetConfigs.find(b =>
@@ -513,6 +514,26 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
         } else if (finalType === 'income') {
             // INCOME: Add to account (or reduce debt if credit card - rare but possible)
             balanceDelta = isCredit ? -t.amount : t.amount;
+        } else if (finalType === 'saving' && t.toAccountId) {
+            // SAVING (Internal Transfer): Move from Source (finalAccountId) to Destination (toAccountId)
+            const toAccount = data.accounts.find(a => a.id === t.toAccountId);
+            const toIsCredit = toAccount?.type === 'credit';
+
+            // Source (where money leaves): Credit=+Debt, Debit=-Balance
+            const sourceDelta = isCredit ? t.amount : -t.amount;
+            // Destination (where money enters): Credit=-Debt, Debit=+Balance
+            const destDelta = toIsCredit ? -t.amount : t.amount;
+
+            setData(prev => ({
+                ...prev,
+                transactions: [newTx, ...prev.transactions],
+                accounts: prev.accounts.map(a => {
+                    if (a.id === finalAccountId) return { ...a, balance: a.balance + sourceDelta };
+                    if (a.id === t.toAccountId) return { ...a, balance: a.balance + destDelta };
+                    return a;
+                })
+            }));
+            return;
         } else if (finalType === 'expense' || finalType === 'saving') {
             // EXPENSE/SAVING: 
             // - For debit/cash: Reduce balance

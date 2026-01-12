@@ -36,6 +36,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
         date: new Date().toISOString().split('T')[0],
         type: "expense" as "income" | "expense" | "saving" | "transfer",
         accountId: "", // Will use default
+        toAccountId: "", // Destination for savings
         isRecurring: false,
         frequency: "monthly" as "daily" | "weekly" | "biweekly" | "monthly" | "yearly",
         subscriptionName: "",
@@ -59,6 +60,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                 date: editingTransaction.date,
                 type: editingTransaction.type,
                 accountId: editingTransaction.accountId || '',
+                toAccountId: (editingTransaction as any).toAccountId || '',
                 isRecurring: editingTransaction.isRecurring || false,
                 frequency: editingTransaction.frequency || "monthly",
                 subscriptionName: editingTransaction.subscriptionName || "",
@@ -74,6 +76,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                     date: new Date().toISOString().split('T')[0],
                     type: "expense",
                     accountId: "",
+                    toAccountId: "",
                     isRecurring: false,
                     frequency: "monthly",
                     subscriptionName: "",
@@ -135,7 +138,8 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
             nextPaymentDate: nextPaymentDate,
             // For saving, subscriptionName is not needed/hidden, so we can ignore it or set to simplified desc
             subscriptionName: formData.isRecurring ? (formData.type === 'saving' ? finalDescription : (formData.subscriptionName || formData.description)) : undefined,
-            goalId: formData.type === 'saving' ? Number(formData.goalId) : undefined
+            goalId: formData.type === 'saving' ? Number(formData.goalId) : undefined,
+            toAccountId: formData.type === 'saving' ? formData.toAccountId : undefined
         };
 
         if (editingTransaction) {
@@ -380,9 +384,34 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                         <p className="text-[10px] text-slate-400 mt-1">
                             {formData.type === 'expense' && 'Si usaste tarjeta de crédito, se añadirá a tu deuda.'}
                             {formData.type === 'income' && 'Selecciona dónde depositaste el dinero.'}
-                            {formData.type === 'saving' && 'Selecciona la cuenta de donde se retira el monto. El ahorro irá a la meta seleccionada.'}
+                            {formData.type === 'saving' && 'Selecciona la cuenta de donde se retira el monto.'}
                         </p>
                     </div>
+
+                    {/* Destination Account Selector - "Hacia qué cuenta va el ahorro" - Only for Savings */}
+                    {formData.type === 'saving' && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                <PiggyBank size={14} />
+                                ¿Hacia qué cuenta va el ahorro?
+                            </label>
+                            <select
+                                value={formData.toAccountId}
+                                onChange={e => setFormData({ ...formData, toAccountId: e.target.value })}
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm font-medium text-slate-900 dark:text-white"
+                            >
+                                <option value="">🌐 Externo / Ninguna (Solo registrar meta)</option>
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.icon || '💰'} {account.name} ({account.type === 'investment' ? 'Inversión' : 'Cuenta'})
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-slate-400 mt-1">
+                                Opcional. Si seleccionas una cuenta, se sumará el dinero allí automáticamente.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Recurrence Switch */}
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-4">
