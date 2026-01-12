@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
 import { Edit2, Trash2, Search, Filter } from "lucide-react";
@@ -12,9 +12,18 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ onEdit, data }: TransactionTableProps) {
-    const { deleteTransaction } = useFinancial();
+    const { deleteTransaction, budgetConfigs } = useFinancial();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
+
+    // Helper: Resolve category display name from budgetId
+    const getCategoryDisplay = (t: Transaction) => {
+        if (t.budgetId) {
+            const budget = budgetConfigs.find(b => b.id === t.budgetId);
+            if (budget) return `${budget.icon || ''} ${budget.name}`.trim();
+        }
+        return t.category || 'Sin categoría';
+    };
 
     const filtered = data.filter(t => {
         const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -72,8 +81,8 @@ export function TransactionTable({ onEdit, data }: TransactionTableProps) {
                                     {t.description}
                                 </td>
                                 <td className="p-4">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 capitalize">
-                                        {(t.category ?? 'Sin categoría').replace('_', ' ')}
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50">
+                                        {getCategoryDisplay(t)}
                                     </span>
                                 </td>
                                 <td className="p-4 text-slate-500 dark:text-slate-400 text-xs">

@@ -310,33 +310,83 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
     const addTransaction = (t: Omit<Transaction, 'id'>) => {
         let finalType = t.type;
-        let finalCategory = t.category;
+        let finalCategory = t.category || '';
+        let finalBudgetId = t.budgetId || '';
 
-        // CRITICAL LOGIC: If linked to a goal, FORCE it to be an expense (money leaving)
-        // but categorized as 'ahorro' for tracking.
+        // === ROBUST SYNC LOGIC ===
+
+        // Caso A: Trae budgetId → sincroniza category desde el presupuesto
+        if (finalBudgetId) {
+            const budget = data.budgetConfigs.find(b => b.id === finalBudgetId);
+            if (budget) {
+                finalCategory = budget.name; // Sincroniza el nombre visible
+            } else {
+                // budgetId inválido, asignar a 'Otros'
+                finalBudgetId = DEFAULT_BUDGET_ID;
+                finalCategory = 'Otros';
+            }
+        }
+        // Caso B: No trae ID pero trae category → buscar presupuesto por nombre
+        else if (finalCategory) {
+            const budget = data.budgetConfigs.find(b =>
+                b.name.toLowerCase() === finalCategory.toLowerCase() ||
+                b.category.toLowerCase() === finalCategory.toLowerCase()
+            );
+            if (budget) {
+                finalBudgetId = budget.id;
+                finalCategory = budget.name; // Normalizar al nombre oficial
+            } else {
+                // Categoría no existe como presupuesto → asignar a 'Otros'
+                finalBudgetId = DEFAULT_BUDGET_ID;
+                // Mantener la categoría escrita pero vincular a Otros
+            }
+        }
+        // Caso C: Huérfana (sin budgetId ni category)
+        else {
+            finalBudgetId = DEFAULT_BUDGET_ID;
+            finalCategory = 'Otros';
+        }
+
+        // CRITICAL LOGIC: If linked to a goal, FORCE it to be an expense
         if (t.goalId || t.category === 'ahorro' || t.type === 'saving') {
             finalType = 'expense';
-            finalCategory = 'ahorro';
+            finalCategory = 'Ahorro';
+            // Buscar o usar un presupuesto de ahorro si existe
+            const savingsBudget = data.budgetConfigs.find(b =>
+                b.name.toLowerCase() === 'ahorro' || b.category.toLowerCase() === 'ahorro'
+            );
+            finalBudgetId = savingsBudget?.id || DEFAULT_BUDGET_ID;
         }
 
         const newTx = {
             ...t,
             type: finalType,
             category: finalCategory,
+            budgetId: finalBudgetId,
             id: Date.now()
         } as Transaction;
 
-        // 1. Handle Budget Check (Only for true Expenses, excluding savings if we want, but user said 'expense')
-        // We warn about savings if they exceed budget too? Yes, usually.
-        if (finalType === 'expense') {
-            const budget = data.budgetConfigs.find(b => b.category === finalCategory);
-            if (budget) {
+        // 1. Handle Budget Alert Check (usando ID para mayor precisión)
+        if (finalType === 'expense' && finalCategory !== 'Ahorro') {
+            const budget = data.budgetConfigs.find(b =>
+                b.id === finalBudgetId ||
+                b.name.toLowerCase() === finalCategory.toLowerCase()
+            );
+            if (budget && budget.limit > 0) {
                 const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+
+                // Filtro dual: por budgetId O por category para compatibilidad
                 const totalSpent = data.transactions
-                    .filter(tx => tx.category === finalCategory && tx.type === 'expense' && new Date(tx.date).getMonth() === currentMonth)
+                    .filter(tx =>
+                        (tx.budgetId === budget.id || tx.category === budget.name) &&
+                        tx.type === 'expense' &&
+                        new Date(tx.date).getMonth() === currentMonth &&
+                        new Date(tx.date).getFullYear() === currentYear
+                    )
                     .reduce((sum, tx) => sum + tx.amount, 0) + t.amount;
 
-                const alert = NotificationService.checkBudgetThreshold(finalCategory || 'General', totalSpent, budget.limit);
+                const alert = NotificationService.checkBudgetThreshold(budget.name || 'General', totalSpent, budget.limit);
                 if (alert) {
                     addNotification(alert);
                 }
