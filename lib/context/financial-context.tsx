@@ -360,10 +360,17 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
                 const existingDebt = newDebts.find(d => d.id === linkedDebtId);
 
                 if (existingDebt) {
-                    // Update existing debt if card data changed
+                    // Update existing debt
                     if (existingDebt.currentBalance !== card.balance ||
                         existingDebt.creditLimit !== card.limit ||
-                        existingDebt.name !== card.name) {
+                        existingDebt.name !== card.name ||
+                        existingDebt.interestRate !== (card.interestRate || 0) ||
+                        existingDebt.minPayment !== (card.minPayment || 0) ||
+                        existingDebt.paymentFrequency !== (card.paymentFrequency || 'monthly') ||
+                        existingDebt.overdraftLimit !== card.overdraftLimit ||
+                        existingDebt.cutoffDay !== card.cutoffDay ||
+                        existingDebt.paymentDay !== card.paymentDay) {
+
                         newDebts = newDebts.map(d =>
                             d.id === linkedDebtId
                                 ? {
@@ -371,7 +378,13 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
                                     name: card.name,
                                     currentBalance: card.balance,
                                     creditLimit: card.limit,
-                                    availableBalance: (card.limit || 0) - card.balance
+                                    availableBalance: (card.limit || 0) - card.balance,
+                                    interestRate: card.interestRate || 0,
+                                    minPayment: card.minPayment || 0,
+                                    paymentFrequency: card.paymentFrequency || 'monthly',
+                                    overdraftLimit: card.overdraftLimit,
+                                    cutoffDay: card.cutoffDay,
+                                    paymentDay: card.paymentDay
                                 }
                                 : d
                         );
@@ -384,10 +397,14 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
                         type: 'credit_card' as const,
                         name: card.name,
                         currentBalance: card.balance,
-                        interestRate: 0, // User can edit in debts page
-                        minPayment: 0,
+                        interestRate: card.interestRate || 0,
+                        minPayment: card.minPayment || 0,
+                        paymentFrequency: card.paymentFrequency || 'monthly',
                         category: 'debt',
                         creditLimit: card.limit,
+                        overdraftLimit: card.overdraftLimit,
+                        cutoffDay: card.cutoffDay,
+                        paymentDay: card.paymentDay,
                         availableBalance: (card.limit || 0) - card.balance,
                         // Link back to account
                         linkedAccountId: card.id

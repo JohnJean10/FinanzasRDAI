@@ -17,6 +17,13 @@ export interface Account {
     interestRate?: number;           // Tasa de interés anual (%)
     maturityDate?: string;           // Fecha de vencimiento (ISO) - para certificados
     investmentType?: 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other'; // Subtipo
+
+    // Credit Card specific fields (Synced to Debts)
+    minPayment?: number;
+    paymentFrequency?: 'weekly' | 'biweekly' | 'monthly';
+    overdraftLimit?: number;
+    cutoffDay?: number;
+    paymentDay?: number;
 }
 
 // === TRANSACTION TYPES ===

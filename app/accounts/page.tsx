@@ -257,7 +257,13 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
         // Investment/Savings fields
         interestRate: "",
         maturityDate: "",
-        investmentType: "savings" as 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other'
+        investmentType: "savings" as 'certificate' | 'savings' | 'stocks' | 'mutual_fund' | 'other',
+        // Credit Card fields
+        minPayment: "",
+        paymentFrequency: "monthly" as 'weekly' | 'biweekly' | 'monthly',
+        overdraftLimit: "",
+        cutoffDay: "",
+        paymentDay: ""
     });
 
     // Populate form when editing
@@ -272,7 +278,12 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                 icon: editingAccount.icon || "🏦",
                 interestRate: editingAccount.interestRate?.toString() || "",
                 maturityDate: editingAccount.maturityDate || "",
-                investmentType: editingAccount.investmentType || "savings"
+                investmentType: editingAccount.investmentType || "savings",
+                minPayment: editingAccount.minPayment?.toString() || "",
+                paymentFrequency: editingAccount.paymentFrequency || "monthly",
+                overdraftLimit: editingAccount.overdraftLimit?.toString() || "",
+                cutoffDay: editingAccount.cutoffDay?.toString() || "",
+                paymentDay: editingAccount.paymentDay?.toString() || ""
             });
         }
     });
@@ -290,11 +301,17 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
             currency: formData.currency,
             icon: formData.icon,
             // Investment/Savings fields
-            interestRate: (formData.type === 'investment' || formData.type === 'bank') && formData.interestRate
+            interestRate: (formData.type === 'investment' || formData.type === 'bank' || formData.type === 'credit') && formData.interestRate
                 ? parseFloat(formData.interestRate) : undefined,
             maturityDate: formData.type === 'investment' && formData.investmentType === 'certificate' && formData.maturityDate
                 ? formData.maturityDate : undefined,
-            investmentType: formData.type === 'investment' ? formData.investmentType : undefined
+            investmentType: formData.type === 'investment' ? formData.investmentType : undefined,
+            // Credit Card fields
+            minPayment: formData.type === 'credit' ? parseFloat(formData.minPayment) || 0 : undefined,
+            paymentFrequency: formData.type === 'credit' ? formData.paymentFrequency : undefined,
+            overdraftLimit: formData.type === 'credit' ? parseFloat(formData.overdraftLimit) || 0 : undefined,
+            cutoffDay: formData.type === 'credit' ? parseInt(formData.cutoffDay) || undefined : undefined,
+            paymentDay: formData.type === 'credit' ? parseInt(formData.paymentDay) || undefined : undefined
         };
 
         if (editingAccount) {
@@ -305,7 +322,8 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
 
         onClose();
         // Reset form
-        setFormData({ name: "", type: "bank", balance: "", limit: "", currency: "DOP", icon: "🏦", interestRate: "", maturityDate: "", investmentType: "savings" });
+        // Reset form
+        setFormData({ name: "", type: "bank", balance: "", limit: "", currency: "DOP", icon: "🏦", interestRate: "", maturityDate: "", investmentType: "savings", minPayment: "", paymentFrequency: "monthly", overdraftLimit: "", cutoffDay: "", paymentDay: "" });
     };
 
     const ICONS = ["💵", "🏦", "💳", "📱", "💰", "🏧", "💎", "🪙"];
@@ -402,18 +420,65 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                         </div>
                     </div>
 
-                    {/* Credit Limit (only for credit cards) */}
-                    {formData.type === 'credit' && (
-                        <div className="animate-in fade-in slide-in-from-top-2">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Límite de Crédito</label>
+                    {/* Interest Rate (for investments, bank savings, and CREDIT CARDS) */}
+                    {(formData.type === 'investment' || formData.type === 'bank' || formData.type === 'credit') && (
+                        <div className="animate-in fade-in slide-in-from-top-2 mb-4">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                {formData.type === 'credit' ? 'Tasa Anual Real (%)' : 'Tasa de Interés Anual (%)'}
+                            </label>
                             <input
                                 type="number"
                                 step="0.01"
-                                value={formData.limit}
-                                onChange={e => setFormData({ ...formData, limit: e.target.value })}
-                                placeholder="Ej: 50000"
+                                value={formData.interestRate}
+                                onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
+                                placeholder="Ej: 40"
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
                             />
+                        </div>
+                    )}
+
+                    {/* Credit Card Specific Fields */}
+                    {formData.type === 'credit' && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                            {/* Min Payment & Frequency */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Pago Mínimo</label>
+                                    <input type="number" value={formData.minPayment} onChange={e => setFormData({ ...formData, minPayment: e.target.value })} placeholder="Ej: 1500" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Frecuencia</label>
+                                    <select value={formData.paymentFrequency} onChange={e => setFormData({ ...formData, paymentFrequency: e.target.value as any })} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white">
+                                        <option value="monthly">Mensual</option>
+                                        <option value="biweekly">Quincenal</option>
+                                        <option value="weekly">Semanal</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Credit Limit & Overdraft */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Límite de Crédito</label>
+                                    <input type="number" value={formData.limit} onChange={e => setFormData({ ...formData, limit: e.target.value })} placeholder="Ej: 50000" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 text-blue-600 dark:text-blue-400">Límite Sobregiro</label>
+                                    <input type="number" value={formData.overdraftLimit} onChange={e => setFormData({ ...formData, overdraftLimit: e.target.value })} placeholder="Ej: 5000" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium" />
+                                </div>
+                            </div>
+
+                            {/* Dates */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Día Corte</label>
+                                    <input type="number" min="1" max="31" value={formData.cutoffDay} onChange={e => setFormData({ ...formData, cutoffDay: e.target.value })} placeholder="Ej: 22" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Día Pago</label>
+                                    <input type="number" min="1" max="31" value={formData.paymentDay} onChange={e => setFormData({ ...formData, paymentDay: e.target.value })} placeholder="Ej: 16" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium" />
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -435,7 +500,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                         </div>
                     )}
 
-                    {/* Interest Rate (for investments and bank savings) */}
+                    {/* Interest Rate (for investments and bank savings - CREDIT CARDS handled above) */}
                     {(formData.type === 'investment' || formData.type === 'bank') && (
                         <div className="animate-in fade-in slide-in-from-top-2">
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
