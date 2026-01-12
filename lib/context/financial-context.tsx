@@ -336,7 +336,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
                     .filter(tx => tx.category === finalCategory && tx.type === 'expense' && new Date(tx.date).getMonth() === currentMonth)
                     .reduce((sum, tx) => sum + tx.amount, 0) + t.amount;
 
-                const alert = NotificationService.checkBudgetThreshold(finalCategory, totalSpent, budget.limit);
+                const alert = NotificationService.checkBudgetThreshold(finalCategory || 'General', totalSpent, budget.limit);
                 if (alert) {
                     addNotification(alert);
                 }
