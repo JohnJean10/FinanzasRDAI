@@ -361,7 +361,9 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                     <div className="animate-in fade-in slide-in-from-top-2">
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
                             <Wallet size={14} />
-                            {formData.type === 'income' ? '¿A qué cuenta?' : '¿Con qué pagaste?'}
+                            {formData.type === 'income' ? '¿A qué cuenta?' :
+                                formData.type === 'saving' ? '¿De qué cuenta sale el ahorro?' :
+                                    '¿Con qué pagaste?'}
                         </label>
                         <select
                             value={formData.accountId}
@@ -378,6 +380,7 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
                         <p className="text-[10px] text-slate-400 mt-1">
                             {formData.type === 'expense' && 'Si usaste tarjeta de crédito, se añadirá a tu deuda.'}
                             {formData.type === 'income' && 'Selecciona dónde depositaste el dinero.'}
+                            {formData.type === 'saving' && 'Selecciona la cuenta de donde se retira el monto. El ahorro irá a la meta seleccionada.'}
                         </p>
                     </div>
 
