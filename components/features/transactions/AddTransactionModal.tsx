@@ -117,10 +117,15 @@ export function AddTransactionModal({ isOpen: propIsOpen, onClose: propOnClose, 
             finalDescription = selectedGoal ? `Ahorro: ${selectedGoal.name}` : "Ahorro General";
         }
 
+        // Obtener el presupuesto seleccionado para sincronizar category
+        const selectedBudget = budgetConfigs.find(b => b.id === formData.budgetId);
+
         const cleanData = {
             type: formData.type,
             amount: parseFloat(formData.amount),
-            category: formData.type === 'saving' ? 'ahorros' : formData.category,
+            // CRITICAL: Include budgetId AND sync category from the budget
+            budgetId: formData.type === 'saving' ? null : formData.budgetId,
+            category: formData.type === 'saving' ? 'ahorros' : (selectedBudget?.name || formData.category || 'Sin Categoría'),
             date: new Date(formData.date + "T12:00:00").toISOString(),
             description: finalDescription,
             accountId: formData.accountId || getDefaultAccount()?.id || 'account-cash-1',
