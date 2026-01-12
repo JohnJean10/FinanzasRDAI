@@ -12,7 +12,7 @@ interface DepositModalProps {
 }
 
 export function DepositModal({ isOpen, onClose, goal }: DepositModalProps) {
-    const { updateGoal, addTransaction } = useFinancial();
+    const { updateGoal, addTransaction, getDefaultAccount } = useFinancial();
     const [amount, setAmount] = useState("");
     const [type, setType] = useState<"deposit" | "withdraw">("deposit");
 
@@ -37,7 +37,7 @@ export function DepositModal({ isOpen, onClose, goal }: DepositModalProps) {
             category: 'otros', // Could be 'savings' if we added that category
             date: new Date().toISOString().split('T')[0],
             type: type === 'deposit' ? 'expense' : 'income', // Deposit into savings is an 'expense' from checking, withdrawal is 'income' back to checking
-            account: 'general'
+            accountId: getDefaultAccount()?.id || 'account-cash-1'
         });
 
         onClose();
@@ -100,8 +100,8 @@ export function DepositModal({ isOpen, onClose, goal }: DepositModalProps) {
                     <button
                         type="submit"
                         className={`w-full py-3 text-white rounded-xl font-medium transition-colors flex justify-center items-center gap-2 ${type === 'deposit'
-                                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20'
-                                : 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20'
+                            : 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
                             }`}
                     >
                         <Save size={18} />

@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 
 export default function OnboardingWizard() {
-    const { updateUser, addGoal, addTransaction } = useFinancial();
+    const { updateUser, addGoal, addTransaction, getDefaultAccount } = useFinancial();
     const router = useRouter();
     const [step, setStep] = useState(0);
 
@@ -124,7 +124,7 @@ export default function OnboardingWizard() {
             category: 'ingreso_sueldo',
             description: `Nómina (${formData.incomeFrequency})`,
             date: new Date().toISOString().split('T')[0],
-            account: 'general'
+            accountId: getDefaultAccount()?.id || 'account-cash-1'
         });
 
         // 3. Crear Meta (El Clavo)

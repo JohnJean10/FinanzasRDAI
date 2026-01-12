@@ -25,7 +25,8 @@ export function ChatInterface() {
         user, transactions, debts, goals, metrics,
         addTransaction, payDebt, learnFact, addGoal,
         budgetConfigs, addBudget, updateBudget, deleteBudget,
-        getTotalBudgeted, getAvailableToAssign, getBudgetByCategory
+        getTotalBudgeted, getAvailableToAssign, getBudgetByCategory,
+        getDefaultAccount
     } = useFinancial();
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
@@ -236,7 +237,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Pago a ${targetDebt.name}`,
                         date: new Date().toISOString(),
-                        accountId: undefined // Usa cuenta por defecto
+                        accountId: getDefaultAccount()?.id || 'account-cash-1' // Usa cuenta por defecto
                     });
                 } else {
                     addTransaction({
@@ -245,7 +246,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Pago Deuda: ${action.payload.debtName}`,
                         date: new Date().toISOString(),
-                        accountId: undefined // Usa cuenta por defecto
+                        accountId: getDefaultAccount()?.id || 'account-cash-1' // Usa cuenta por defecto
                     });
                 }
             } else if (action.type === 'LEARN_FACT') {
@@ -270,7 +271,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Ahorro para meta: ${targetGoal.name}`,
                         date: new Date().toISOString(),
-                        accountId: undefined, // Usa cuenta por defecto
+                        accountId: getDefaultAccount()?.id || 'account-cash-1', // Usa cuenta por defecto
                         goalId: targetGoal.id
                     });
                 } else {
@@ -281,7 +282,7 @@ Usa [ACTION: JSON] para realizar cambios.
                         type: 'expense',
                         description: `Ahorro General: ${targetName}`,
                         date: new Date().toISOString(),
-                        accountId: undefined // Usa cuenta por defecto
+                        accountId: getDefaultAccount()?.id || 'account-cash-1' // Usa cuenta por defecto
                     });
                 }
             } else if (action.type === 'CREATE_BUDGET') {
