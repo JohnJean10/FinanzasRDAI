@@ -2,44 +2,29 @@
 
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
-import { CreditCard, ExternalLink } from "lucide-react";
+import { ExternalLink, MoreVertical } from "lucide-react";
 
-export function BalanceCardsWidget() {
+export function BalanceCardFynix() {
     const { accounts } = useFinancial();
 
-    // Get first 2 bank/credit accounts
+    // Get bank/credit accounts
     const displayAccounts = accounts
         .filter(a => a.type === "bank" || a.type === "credit")
         .slice(0, 2);
 
     // Calculate total balance
     const totalBalance = accounts.reduce((acc, a) => {
-        if (a.type === "credit") return acc; // Don't add credit to total
+        if (a.type === "credit") return acc;
         return acc + a.balance;
     }, 0);
 
-    const getCardGradient = (index: number) => {
-        const gradients = [
-            "from-blue-600 via-blue-500 to-blue-400",
-            "from-slate-800 via-slate-700 to-slate-600",
-        ];
-        return gradients[index % gradients.length];
-    };
-
-    const getCardLogo = (brand?: string) => {
-        if (brand === "visa" || brand === "mastercard") {
-            return brand.toUpperCase();
-        }
-        return "CARD";
-    };
-
     return (
-        <div className="bg-white dark:bg-[#1E2030] rounded-bento p-6 shadow-bento dark:shadow-bento-dark">
+        <div className="bg-white dark:bg-[#1a1f2e] rounded-[32px] p-6 h-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Balance</p>
-                <button className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                    <span className="text-slate-400 text-lg">⋮</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">Balance</span>
+                <button className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <MoreVertical size={18} />
                 </button>
             </div>
 
@@ -51,40 +36,35 @@ export function BalanceCardsWidget() {
                 </h3>
             </div>
 
-            {/* Credit Cards */}
-            <div className="grid grid-cols-2 gap-4">
-                {displayAccounts.map((account, index) => (
-                    <div
-                        key={account.id}
-                        className={`bg-gradient-to-br ${getCardGradient(index)} rounded-2xl p-4 text-white relative overflow-hidden`}
-                    >
-                        {/* Card Pattern */}
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            {/* Credit Cards Row */}
+            <div className="grid grid-cols-2 gap-3">
+                {[0, 1].map((index) => {
+                    const account = displayAccounts[index];
+                    const gradients = [
+                        "from-blue-600 to-blue-500",
+                        "from-slate-700 to-slate-600"
+                    ];
 
-                        {/* Card Brand */}
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-xs font-bold opacity-80">
-                                {getCardLogo(account.brand)}
-                            </span>
-                            <ExternalLink size={14} className="opacity-60" />
+                    return (
+                        <div
+                            key={index}
+                            className={`bg-gradient-to-r ${gradients[index]} rounded-2xl p-4 text-white relative overflow-hidden`}
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold uppercase tracking-wider opacity-90">
+                                    CARD
+                                </span>
+                                <ExternalLink size={12} className="opacity-70" />
+                            </div>
+                            <p className="text-[10px] opacity-60 truncate mb-1">
+                                {account?.name || `Card ${index + 1}`}
+                            </p>
+                            <p className="text-base font-bold">
+                                {formatCurrency(Math.abs(account?.balance || 0))}
+                            </p>
                         </div>
-
-                        {/* Card Name */}
-                        <p className="text-xs opacity-70 mb-1 truncate">
-                            {account.name}
-                        </p>
-
-                        {/* Balance */}
-                        <p className="text-lg font-bold">
-                            {formatCurrency(Math.abs(account.balance))}
-                        </p>
-
-                        {/* Card Number (masked) */}
-                        <p className="text-[10px] opacity-50 mt-2">
-                            •••• •••• •••• {Math.random().toString().slice(2, 6)}
-                        </p>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
