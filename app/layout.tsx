@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { FinancialProvider } from "@/lib/context/financial-context";
-import { Sidebar } from "@/components/ui/sidebar";
-import { GlobalAddButton } from "@/components/ui/GlobalAddButton";
+import { FynixSidebar } from "@/components/features/dashboard/FynixSidebar";
+import { AIAssistantPanel } from "@/components/features/dashboard/AIAssistantPanel";
 import { AddTransactionModal } from "@/components/features/transactions/AddTransactionModal";
-import { GlobalCoachWidget } from "@/components/features/coach/GlobalCoachWidget";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -26,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} bg-slate-50 dark:bg-[#0F111A] transition-colors duration-300`}>
+      <body className={`${inter.className} bg-[#f8faf9] dark:bg-[#0f172a] transition-colors duration-300`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -36,13 +35,21 @@ export default function RootLayout({
           <FinancialProvider>
             <AlertProvider>
               <OnboardingGuard>
-                <Sidebar />
-                <main className="lg:pl-64 min-h-screen transition-all duration-200">
-                  {children}
-                </main>
-                {/* Global Components */}
-                <GlobalAddButton />
-                <GlobalCoachWidget />
+                {/* Fynix Layout: Sidebar (64px) + Content + AI Panel (340px) */}
+                <div className="min-h-screen flex">
+                  {/* Fixed Left Sidebar */}
+                  <FynixSidebar />
+
+                  {/* Main Content */}
+                  <main className="flex-1 ml-16 mr-[340px] min-h-screen overflow-auto">
+                    {children}
+                  </main>
+
+                  {/* Fixed Right AI Panel */}
+                  <AIAssistantPanel />
+                </div>
+
+                {/* Global Modal */}
                 <AddTransactionModal />
               </OnboardingGuard>
             </AlertProvider>
@@ -52,6 +59,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-
