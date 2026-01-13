@@ -3,50 +3,52 @@
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
 import { ExternalLink, TrendingUp, TrendingDown } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export function KPIGridFynix() {
     const { transactions } = useFinancial();
+    const { t } = useI18n();
 
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
-    const currentMonthTx = transactions.filter(t => {
-        const txDate = new Date(t.date);
+    const currentMonthTx = (transactions || []).filter(tx => {
+        const txDate = new Date(tx.date);
         return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
     });
 
     const totalEarning = currentMonthTx
-        .filter(t => t.type === "income")
-        .reduce((acc, t) => acc + t.amount, 0);
+        .filter(tx => tx.type === "income")
+        .reduce((acc, tx) => acc + tx.amount, 0);
 
     const totalSpending = currentMonthTx
-        .filter(t => t.type === "expense")
-        .reduce((acc, t) => acc + t.amount, 0);
+        .filter(tx => tx.type === "expense")
+        .reduce((acc, tx) => acc + tx.amount, 0);
 
     const kpis = [
         {
-            label: "Total Earning",
+            label: t.dashboard.totalEarning,
             value: totalEarning,
             change: 8.5,
             isPositive: true,
             accentColor: "emerald"
         },
         {
-            label: "Total Spending",
+            label: t.dashboard.totalSpending,
             value: totalSpending,
             change: -4.7,
             isPositive: false,
             accentColor: "red"
         },
         {
-            label: "Total Income",
+            label: t.dashboard.totalIncome,
             value: totalEarning,
             change: 2.3,
             isPositive: true,
             accentColor: "emerald"
         },
         {
-            label: "Total Revenue",
+            label: t.dashboard.totalRevenue,
             value: totalEarning - totalSpending,
             change: 4.4,
             isPositive: true,
@@ -61,7 +63,6 @@ export function KPIGridFynix() {
                     key={index}
                     className="bg-white dark:bg-[#1a1f2e] rounded-[24px] p-5 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,0,0,0.04)] relative"
                 >
-                    {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             {kpi.label}
@@ -71,7 +72,6 @@ export function KPIGridFynix() {
                         </button>
                     </div>
 
-                    {/* Value */}
                     <div className={`text-2xl font-bold mb-2 ${kpi.accentColor === "red"
                             ? "text-red-500"
                             : "text-slate-900 dark:text-white"
@@ -79,7 +79,6 @@ export function KPIGridFynix() {
                         {formatCurrency(kpi.value)}
                     </div>
 
-                    {/* Change indicator */}
                     <div className="flex items-center gap-1.5">
                         {kpi.isPositive ? (
                             <TrendingUp size={12} className="text-emerald-500" />
@@ -90,7 +89,7 @@ export function KPIGridFynix() {
                             {kpi.isPositive ? '↑' : '↓'} {Math.abs(kpi.change)}%
                         </span>
                         <span className="text-[11px] text-slate-400">
-                            This month
+                            {t.dashboard.thisMonth}
                         </span>
                     </div>
                 </div>

@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { OnboardingGuard } from "@/components/auth/OnboardingGuard";
 import { AlertProvider } from "@/components/features/planning/AlertSystem";
 import { AppShell } from "@/components/layout/AppShell";
+import { I18nProvider } from "@/lib/i18n";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,16 +30,18 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FinancialProvider>
-            <AlertProvider>
-              <OnboardingGuard>
-                <AppShell>
-                  {children}
-                </AppShell>
-                <AddTransactionModal />
-              </OnboardingGuard>
-            </AlertProvider>
-          </FinancialProvider>
+          <I18nProvider>
+            <FinancialProvider>
+              <AlertProvider>
+                <OnboardingGuard>
+                  <AppShell>
+                    {children}
+                  </AppShell>
+                  <AddTransactionModal />
+                </OnboardingGuard>
+              </AlertProvider>
+            </FinancialProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
