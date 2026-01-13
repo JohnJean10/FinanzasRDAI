@@ -158,7 +158,11 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
     // --- CÁLCULO DE MÉTRICAS CON SEGMENTACIÓN TEMPORAL AVANZADA ---
     const metrics = useMemo(() => {
-        const { transactions, goals } = data; // Destructure transactions AND goals from data
+        // Safety checks for arrays that might be undefined from legacy localStorage
+        const transactions = data.transactions || [];
+        const goals = data.goals || [];
+        const debts = data.debts || [];
+
         const now = new Date();
         let startDate = new Date();
         let endDate = new Date();
@@ -264,13 +268,16 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
     // --- NET WORTH CALCULATION (Patrimonio Neto) ---
     const netWorth = useMemo(() => {
+        // Safety check: ensure accounts array exists
+        const accounts = data.accounts || [];
+
         // Assets: Sum of all non-credit account balances
-        const assets = data.accounts
+        const assets = accounts
             .filter(a => a.type !== 'credit')
             .reduce((sum, a) => sum + a.balance, 0);
 
         // Credit Debt: Sum of credit card balances (what's consumed = debt)
-        const creditDebt = data.accounts
+        const creditDebt = accounts
             .filter(a => a.type === 'credit')
             .reduce((sum, a) => sum + a.balance, 0);
 
