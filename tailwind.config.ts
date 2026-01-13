@@ -17,6 +17,20 @@ const config: Config = {
                 warning: "#f59e0b", // Amber 500
                 background: "var(--background)",
                 foreground: "var(--foreground)",
+                // Bento Grid Design System
+                'bento-light': '#ffffff',
+                'bento-dark': '#1E2030',
+                'accent-neon': '#22c55e', // Green 500 for action buttons
+            },
+            borderRadius: {
+                'bento': '32px',
+                '2xl': '16px',
+                '3xl': '24px',
+            },
+            boxShadow: {
+                'bento': '0 20px 60px -10px rgba(100, 116, 139, 0.15)',
+                'bento-hover': '0 25px 80px -10px rgba(100, 116, 139, 0.2)',
+                'bento-dark': '0 20px 60px -10px rgba(0, 0, 0, 0.4)',
             },
         },
     },
