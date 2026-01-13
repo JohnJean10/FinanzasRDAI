@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFinancial } from "@/lib/context/financial-context";
 import { Account } from "@/lib/types";
 import { Plus, Wallet, CreditCard, Building2, PiggyBank, Landmark, MoreVertical, Pencil, Trash2, X, Save, Star } from "lucide-react";
@@ -268,7 +268,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
     });
 
     // Populate form when editing
-    useState(() => {
+    useEffect(() => {
         if (editingAccount) {
             setFormData({
                 name: editingAccount.name,
@@ -288,7 +288,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                 paymentDay: editingAccount.paymentDay?.toString() || ""
             });
         }
-    });
+    }, [editingAccount]);
 
     if (!isOpen) return null;
 
