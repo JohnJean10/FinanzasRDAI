@@ -1,12 +1,13 @@
 import { FynixTopBar } from "@/components/features/dashboard/FynixTopBar";
 import { HeroBalanceCard } from "@/components/features/dashboard/NetWorthCard";
 import { KPIGridFynix } from "@/components/features/dashboard/KPIGridBento";
-import { CryptoFiatSection } from "@/components/features/dashboard/CryptoFiatSection";
+import { SubscriptionsWidget } from "@/components/features/dashboard/SubscriptionsWidget";
 import { NetWorthDonutFynix } from "@/components/features/dashboard/NetWorthDonut";
 import { BalanceCardsFynix } from "@/components/features/dashboard/BalanceCardsWidget";
 import { CashflowChartFynix } from "@/components/features/dashboard/CashflowChartBento";
 import { RecentTransactionsFynix } from "@/components/features/dashboard/RecentTransactionsBento";
 import { BudgetAlerts } from "@/components/features/dashboard/BudgetAlerts";
+import { SubscriptionAlerts } from "@/components/features/dashboard/SubscriptionAlerts";
 
 export default function DashboardPage() {
     return (
@@ -14,8 +15,9 @@ export default function DashboardPage() {
             {/* Top Bar */}
             <FynixTopBar />
 
-            {/* Budget Alerts (if any) */}
+            {/* Alerts */}
             <div className="px-6">
+                <SubscriptionAlerts />
                 <BudgetAlerts />
             </div>
 
@@ -34,11 +36,11 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Row 2: Crypto + Net Worth */}
+                {/* Row 2: Subscriptions + Net Worth */}
                 <div className="grid grid-cols-12 gap-5 mb-5">
-                    {/* Crypto/Fiat Section */}
+                    {/* Subscriptions Widget */}
                     <div className="col-span-5">
-                        <CryptoFiatSection />
+                        <SubscriptionsWidget />
                     </div>
 
                     {/* Net Worth Donut */}
