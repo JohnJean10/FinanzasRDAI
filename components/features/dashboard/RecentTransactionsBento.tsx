@@ -123,8 +123,8 @@ export function RecentTransactionsFynix() {
                             {/* Amount */}
                             <div className="col-span-2 text-right">
                                 <span className={`text-sm font-semibold ${tx.type === "income"
-                                        ? "text-emerald-500"
-                                        : "text-red-500"
+                                    ? "text-emerald-500"
+                                    : "text-red-500"
                                     }`}>
                                     {tx.type === "income" ? "+" : "-"}
                                     {formatCurrency(tx.amount)}
@@ -133,8 +133,8 @@ export function RecentTransactionsFynix() {
 
                             {/* Status */}
                             <div className="col-span-1 text-right">
-                                <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
-                                    {t.dashboard.completed}
+                                <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-1 rounded-full whitespace-nowrap">
+                                    ✓
                                 </span>
                             </div>
                         </div>
