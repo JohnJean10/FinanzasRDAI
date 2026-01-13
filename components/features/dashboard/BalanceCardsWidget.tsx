@@ -3,31 +3,33 @@
 import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export function BalanceCardsFynix() {
     const { accounts } = useFinancial();
+    const { t } = useI18n();
 
-    const totalBalance = accounts.reduce((acc, a) => {
+    const totalBalance = (accounts || []).reduce((acc, a) => {
         if (a.type === "credit") return acc;
         return acc + a.balance;
     }, 0);
 
-    const displayAccounts = accounts
+    const displayAccounts = (accounts || [])
         .filter(a => a.type === "bank" || a.type === "credit")
         .slice(0, 2);
 
     const cards = [
         {
-            name: "Platinum Plus Visa",
+            name: "Visa Platinum Plus",
             number: "4532 8723 0045 9967",
-            balance: displayAccounts[0]?.balance || 415000,
+            balance: displayAccounts[0]?.balance || 0,
             brand: "VISA",
             gradient: "from-blue-600 to-blue-500"
         },
         {
             name: "Freedom Unlimited Mastercard",
             number: "5582 5574 8376 5487",
-            balance: displayAccounts[1]?.balance || 532000,
+            balance: displayAccounts[1]?.balance || 0,
             brand: "MC",
             gradient: "from-slate-700 to-slate-600"
         },
@@ -37,7 +39,7 @@ export function BalanceCardsFynix() {
         <div className="bg-white dark:bg-[#1a1f2e] rounded-[28px] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-500 dark:text-slate-400">Balance</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{t.dashboard.balance}</span>
                 <button className="text-slate-400 hover:text-slate-600 transition-colors">
                     <span className="text-lg">⋮</span>
                 </button>
@@ -45,7 +47,7 @@ export function BalanceCardsFynix() {
 
             {/* Total Balance */}
             <div className="mb-5">
-                <p className="text-xs text-slate-400 mb-1">Total Balance</p>
+                <p className="text-xs text-slate-400 mb-1">{t.dashboard.balance} Total</p>
                 <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
                     {formatCurrency(totalBalance)}
                 </h3>

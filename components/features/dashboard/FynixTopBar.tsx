@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { Search, Settings, HelpCircle, Bell } from "lucide-react";
-
-const NAV_TABS = [
-    { name: "Overview", href: "/dashboard", active: true },
-    { name: "Activity", href: "/transactions", active: false },
-    { name: "Manage", href: "/planning", active: false },
-    { name: "Program", href: "/savings", active: false },
-    { name: "Account", href: "/accounts", active: false },
-    { name: "Reports", href: "/reports", active: false },
-];
+import { useI18n } from "@/lib/i18n";
 
 export function FynixTopBar() {
+    const { t } = useI18n();
+
+    const NAV_TABS = [
+        { name: t.nav.dashboard, href: "/dashboard", active: true },
+        { name: t.nav.transactions, href: "/transactions", active: false },
+        { name: t.nav.budgets, href: "/planning", active: false },
+        { name: t.nav.goals, href: "/savings", active: false },
+        { name: t.nav.accounts, href: "/accounts", active: false },
+        { name: t.nav.reports, href: "/reports", active: false },
+    ];
+
     return (
         <header className="flex items-center justify-between px-6 py-4 bg-white/50 dark:bg-[#1a1f2e]/50 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50">
             {/* Left: Logo + Tabs */}
@@ -23,7 +26,7 @@ export function FynixTopBar() {
                         <span className="text-white text-sm font-bold">F</span>
                     </div>
                     <span className="text-lg font-bold text-slate-900 dark:text-white">
-                        Fynix
+                        FinanzasRD
                     </span>
                 </div>
 
@@ -51,7 +54,7 @@ export function FynixTopBar() {
                     <Search size={16} className="text-slate-400" />
                     <input
                         type="text"
-                        placeholder="Search anything"
+                        placeholder={t.common.search + "..."}
                         className="bg-transparent border-none outline-none text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 w-40"
                     />
                     <div className="flex items-center gap-1 text-slate-400">

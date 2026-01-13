@@ -1,133 +1,145 @@
 "use client";
 
 import { useFinancial } from "@/lib/context/financial-context";
-import { BrandLogo } from "@/components/ui/BrandLogo";
 import { formatCurrency } from "@/lib/utils";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { Filter } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export function RecentTransactionsFynix() {
-    const { transactions, budgetConfigs, accounts } = useFinancial();
+    const { transactions, timeRange, setTimeRange } = useFinancial();
+    const { t } = useI18n();
 
-    const recentTx = [...transactions]
+    const recentTx = (transactions || [])
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 6);
+        .slice(0, 5);
 
-    const getBudgetInfo = (budgetId?: string | null) => {
-        if (!budgetId) return { name: "Others", icon: "💰" };
-        const budget = budgetConfigs.find(b => b.id === budgetId);
-        return budget ? { name: budget.name, icon: budget.icon } : { name: "Others", icon: "💰" };
+    const timeRangeOptions = [
+        { value: "thisMonth", label: t.timeRange.thisMonth },
+        { value: "lastMonth", label: t.timeRange.lastMonth },
+        { value: "last3Months", label: t.timeRange.last3Months },
+    ];
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     };
 
-    const getAccountInfo = (accountId: string) => {
-        const account = accounts.find(a => a.id === accountId);
-        return account?.name || "Platinum Plus Visa";
+    const formatTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString("es-DO", { hour: "2-digit", minute: "2-digit" });
     };
-
-    if (recentTx.length === 0) {
-        return (
-            <div className="bg-white dark:bg-[#1a1f2e] rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
-                <h3 className="font-bold text-slate-900 dark:text-white mb-4">Recent Transactions</h3>
-                <p className="text-sm text-slate-500 text-center py-8">No hay transacciones recientes.</p>
-            </div>
-        );
-    }
 
     return (
-        <div className="bg-white dark:bg-[#1a1f2e] rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
+        <div className="bg-white dark:bg-[#1a1f2e] rounded-[28px] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    Recent Transactions
+            <div className="flex items-center justify-between mb-5">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {t.dashboard.recentTransactions}
                 </h3>
-                <div className="flex items-center gap-3">
-                    <select className="bg-slate-50 dark:bg-slate-800 border-0 text-xs rounded-xl px-3 py-2 text-slate-600 dark:text-slate-300 outline-none cursor-pointer">
-                        <option>This Month</option>
-                        <option>Last Month</option>
+                <div className="flex items-center gap-2">
+                    <select
+                        value={timeRange}
+                        onChange={(e) => setTimeRange(e.target.value as typeof timeRange)}
+                        className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border-none outline-none cursor-pointer"
+                    >
+                        {timeRangeOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
                     </select>
-                    <button className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                        <Filter size={14} className="text-slate-400" />
+                    <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                        <Filter size={14} />
                     </button>
                 </div>
             </div>
 
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-4 px-2 py-3 text-[10px] text-slate-400 font-medium uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                <div className="col-span-4">Transaction Name</div>
-                <div className="col-span-2">Account</div>
-                <div className="col-span-2">Date & Time</div>
-                <div className="col-span-2 text-right">Amount</div>
-                <div className="col-span-2 text-right">Status</div>
+            <div className="grid grid-cols-12 gap-2 mb-3 px-2">
+                <span className="col-span-4 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t.transactions.description}
+                </span>
+                <span className="col-span-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t.transactions.account}
+                </span>
+                <span className="col-span-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t.transactions.date}
+                </span>
+                <span className="col-span-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider text-right">
+                    {t.transactions.amount}
+                </span>
+                <span className="col-span-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider text-right">
+                    Estado
+                </span>
             </div>
 
-            {/* Transactions */}
-            <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                {recentTx.map((t) => {
-                    const budgetInfo = getBudgetInfo(t.budgetId);
-                    const txDate = new Date(t.date.includes("T") ? t.date : t.date + "T12:00:00");
-                    const isCompleted = t.type !== "transfer";
-
-                    return (
+            {/* Transaction Rows */}
+            <div className="space-y-2">
+                {recentTx.length === 0 ? (
+                    <p className="text-center text-slate-400 py-8 text-sm">{t.common.noData}</p>
+                ) : (
+                    recentTx.map((tx) => (
                         <div
-                            key={t.id}
-                            className="grid grid-cols-12 gap-4 px-2 py-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors rounded-xl"
+                            key={tx.id}
+                            className="grid grid-cols-12 gap-2 items-center p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                         >
-                            {/* Transaction Info */}
+                            {/* Name + Logo */}
                             <div className="col-span-4 flex items-center gap-3">
                                 <BrandLogo
-                                    description={t.description}
-                                    category={t.category}
-                                    categoryIcon={budgetInfo.icon}
+                                    description={tx.description}
+                                    category={tx.category}
                                     size="sm"
                                 />
                                 <div className="min-w-0">
-                                    <p className="font-medium text-slate-900 dark:text-white truncate text-sm">
-                                        {t.description || budgetInfo.name}
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                        {tx.description}
                                     </p>
-                                    <p className="text-xs text-slate-400 truncate">
-                                        {budgetInfo.name}
+                                    <p className="text-[11px] text-slate-400 truncate">
+                                        {tx.category || "Sin Categoría"}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Account */}
-                            <div className="col-span-2 flex items-center gap-2">
-                                <div className="px-2 py-1 bg-blue-600 rounded text-[8px] text-white font-bold">
+                            <div className="col-span-2 flex items-center gap-1">
+                                <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">
                                     VISA
-                                </div>
-                                <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                    {getAccountInfo(t.accountId).split(" ")[0]}
+                                </span>
+                                <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                    {tx.accountId?.substring(0, 3) || "---"}
                                 </span>
                             </div>
 
-                            {/* Date */}
-                            <div className="col-span-2">
-                                <p className="text-sm text-slate-600 dark:text-slate-300">
-                                    {txDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            {/* Date & Time */}
+                            <div className="col-span-3">
+                                <p className="text-xs text-slate-700 dark:text-slate-300">
+                                    {formatDate(tx.date)}
                                 </p>
-                                <p className="text-xs text-slate-400">
-                                    {txDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                <p className="text-[10px] text-slate-400">
+                                    {formatTime(tx.date)}
                                 </p>
                             </div>
 
                             {/* Amount */}
                             <div className="col-span-2 text-right">
-                                <p className={`font-semibold text-sm ${t.type === "income" ? "text-emerald-500" : "text-red-500"}`}>
-                                    {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}
-                                </p>
+                                <span className={`text-sm font-semibold ${tx.type === "income"
+                                        ? "text-emerald-500"
+                                        : "text-red-500"
+                                    }`}>
+                                    {tx.type === "income" ? "+" : "-"}
+                                    {formatCurrency(tx.amount)}
+                                </span>
                             </div>
 
                             {/* Status */}
-                            <div className="col-span-2 text-right">
-                                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-semibold ${isCompleted
-                                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                        : "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
-                                    }`}>
-                                    {isCompleted ? "Completed" : "Pending"}
+                            <div className="col-span-1 text-right">
+                                <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
+                                    {t.dashboard.completed}
                                 </span>
                             </div>
                         </div>
-                    );
-                })}
+                    ))
+                )}
             </div>
         </div>
     );
