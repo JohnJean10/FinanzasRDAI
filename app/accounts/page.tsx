@@ -517,39 +517,7 @@ function AccountModal({ isOpen, onClose, editingAccount }: AccountModalProps) {
                         </div>
                     )}
 
-                    {/* Investment Type Selector (only for investments) */}
-                    {formData.type === 'investment' && (
-                        <div className="animate-in fade-in slide-in-from-top-2">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Tipo de Inversión</label>
-                            <select
-                                value={formData.investmentType}
-                                onChange={e => setFormData({ ...formData, investmentType: e.target.value as any })}
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
-                            >
-                                <option value="certificate">📜 Certificado Financiero</option>
-                                <option value="stocks">📈 Acciones (Stocks)</option>
-                                <option value="mutual_fund">🤝 Fondo Mutuo</option>
-                                <option value="other">💎 Otro</option>
-                            </select>
-                        </div>
-                    )}
 
-                    {/* Interest Rate (for investments, bank savings, and CREDIT CARDS) */}
-                    {(formData.type === 'investment' || (formData.type === 'bank' && formData.bankType === 'savings') || formData.type === 'credit') && (
-                        <div className="animate-in fade-in slide-in-from-top-2 mb-4">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                                {formData.type === 'credit' ? 'Tasa Anual Real (%)' : 'Tasa de Interés Anual (%)'}
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={formData.interestRate}
-                                onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
-                                placeholder={formData.type === 'credit' ? "Ej: 60.00" : "Ej: 5.50"}
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-white font-medium"
-                            />
-                        </div>
-                    )}
 
                     {/* Maturity Date (only for certificates) */}
                     {formData.type === 'investment' && formData.investmentType === 'certificate' && (
