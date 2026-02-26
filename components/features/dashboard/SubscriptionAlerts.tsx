@@ -5,8 +5,34 @@ import { useFinancial } from "@/lib/context/financial-context";
 import { formatCurrency } from "@/lib/utils";
 import { Clock, X, CheckCircle } from "lucide-react";
 
+/**
+ * Compute the next payment date based on a reference date and frequency.
+ */
+function computeNextPaymentDate(fromDate: Date, frequency?: string): string {
+    const next = new Date(fromDate);
+    switch (frequency) {
+        case "daily":
+            next.setDate(next.getDate() + 1);
+            break;
+        case "weekly":
+            next.setDate(next.getDate() + 7);
+            break;
+        case "biweekly":
+            next.setDate(next.getDate() + 14);
+            break;
+        case "yearly":
+            next.setFullYear(next.getFullYear() + 1);
+            break;
+        case "monthly":
+        default:
+            next.setMonth(next.getMonth() + 1);
+            break;
+    }
+    return next.toISOString();
+}
+
 export function SubscriptionAlerts() {
-    const { transactions, addTransaction } = useFinancial();
+    const { transactions, addTransaction, updateTransaction } = useFinancial();
     const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
     // Find overdue recurring transactions
@@ -14,28 +40,41 @@ export function SubscriptionAlerts() {
     const overdueSubscriptions = (transactions || [])
         .filter(tx => {
             if (!tx.isRecurring || tx.type !== "expense") return false;
+            if (dismissedAlerts.includes(String(tx.id))) return false;
 
-            const txDate = new Date(tx.date);
-            const daysSincePayment = Math.floor((now.getTime() - txDate.getTime()) / (1000 * 60 * 60 * 24));
+            // Use nextPaymentDate if available, otherwise fall back to tx.date
+            const referenceDate = tx.nextPaymentDate
+                ? new Date(tx.nextPaymentDate)
+                : new Date(tx.date);
 
-            // Consider overdue if more than 30 days since last payment
-            return daysSincePayment > 30 && !dismissedAlerts.includes(String(tx.id));
+            // Overdue = the reference date is in the past
+            return referenceDate.getTime() < now.getTime();
         })
         .slice(0, 3);
 
     const handleMarkAsPaid = (tx: typeof overdueSubscriptions[0]) => {
-        // Create a new transaction for this payment
+        const today = new Date();
+        const todayISO = today.toISOString();
+
+        // 1. Create a new transaction record for this specific payment
         addTransaction({
             type: "expense",
             amount: tx.amount,
             description: tx.description,
-            date: new Date().toISOString(),
+            date: todayISO,
             category: tx.category,
             accountId: tx.accountId,
-            isRecurring: true,
+            isRecurring: false, // The payment itself is a one-time record
         });
 
-        // Dismiss this alert
+        // 2. Update the ORIGINAL recurring transaction so the alert clears permanently
+        const nextPayment = computeNextPaymentDate(today, tx.frequency);
+        updateTransaction(tx.id, {
+            date: todayISO,
+            nextPaymentDate: nextPayment,
+        });
+
+        // 3. Dismiss the alert immediately in the UI
         setDismissedAlerts(prev => [...prev, String(tx.id)]);
     };
 
@@ -68,7 +107,7 @@ export function SubscriptionAlerts() {
                                 Pago Pendiente
                             </p>
                             <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Tienes 1 pago vencido: {sub.description} - {formatCurrency(sub.amount)} (Vence {formatDueDate(sub.date)})
+                                Tienes 1 pago vencido: {sub.description} - {formatCurrency(sub.amount)} (Vence {formatDueDate(sub.nextPaymentDate || sub.date)})
                             </p>
                         </div>
                     </div>
